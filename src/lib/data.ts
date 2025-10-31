@@ -1,30 +1,14 @@
 import type { Connection, TreeNode } from '@/lib/types';
 
-// Mock data mimicking a database table
-export const connections: Connection[] = [
-  { big: 'Alpha', little: 'Beta', treeName: 'Tech Innovators', year: 2020 },
-  { big: 'Alpha', little: 'Gamma', treeName: 'Tech Innovators', year: 2020 },
-  { big: 'Beta', little: 'Delta', treeName: 'Tech Innovators', year: 2021 },
-  { big: 'Gamma', little: 'Epsilon', treeName: 'Tech Innovators', year: 2021 },
-  { big: 'Delta', little: 'Zeta', treeName: 'Tech Innovators', year: 2022 },
-  { big: 'Epsilon', little: 'Eta', treeName: 'Tech Innovators', year: 2022 },
-  { big: 'Zeta', little: 'Theta', treeName: 'Tech Innovators', year: 2023 },
+// This file is now primarily for the data transformation logic.
+// The data itself will be managed in the component's state.
 
-  { big: 'Zeus', little: 'Apollo', treeName: 'Olympus', year: 1 },
-  { big: 'Zeus', little: 'Artemis', treeName: 'Olympus', year: 1 },
-  { big: 'Apollo', little: 'Hermes', treeName: 'Olympus', year: 2 },
-  { big: 'Artemis', little: 'Dionysus', treeName: 'Olympus', year: 2 },
-
-  { big: 'Genesis', little: 'Exodus', treeName: 'Old Testament', year: 100 },
-  { big: 'Genesis', little: 'Leviticus', treeName: 'Old Testament', year: 100 },
-];
-
-export function getTrees() {
+export function getTrees(connections: Connection[]): string[] {
   const treeNames = new Set(connections.map((c) => c.treeName));
   return Array.from(treeNames);
 }
 
-export function getPeople() {
+export function getPeople(connections: Connection[]): string[] {
   const people = new Set<string>();
   connections.forEach((c) => {
     people.add(c.big);
@@ -33,7 +17,10 @@ export function getPeople() {
   return Array.from(people).sort();
 }
 
-export function buildTree(treeName: string): TreeNode[] {
+export function buildTree(
+  connections: Connection[],
+  treeName: string
+): TreeNode[] {
   const relevantConnections = connections.filter(
     (c) => c.treeName === treeName
   );
@@ -55,11 +42,16 @@ export function buildTree(treeName: string): TreeNode[] {
 
   // Populate children
   relevantConnections.forEach(({ big, little }) => {
-    nodes[big].children.push(nodes[little]);
+    // Ensure parent exists before trying to push child
+    if (nodes[big]) {
+      nodes[big].children.push(nodes[little]);
+    }
   });
 
   // Find root nodes (those who are not littles in this tree)
-  const rootNodes = Object.values(nodes).filter((node) => !littles.has(node.name));
+  const rootNodes = Object.values(nodes).filter(
+    (node) => !littles.has(node.name)
+  );
 
   return rootNodes;
 }

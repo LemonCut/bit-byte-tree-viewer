@@ -3,7 +3,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useActionState, useEffect } from 'react';
+import { useEffect } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,8 +23,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { addConnection } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
+import type { Connection } from '@/lib/types';
 
 const FormSchema = z.object({
   big: z.string().min(1, 'Big name is required.'),
@@ -41,13 +41,11 @@ const FormSchema = z.object({
 
 type ConnectionFormProps = {
   currentTree: string;
+  onAddConnection: (connection: Connection) => void;
 };
 
-export function ConnectionForm({ currentTree }: ConnectionFormProps) {
+export function ConnectionForm({ currentTree, onAddConnection }: ConnectionFormProps) {
   const { toast } = useToast();
-
-  const initialState = { message: null, errors: {} };
-  const [state, dispatch] = useActionState(addConnection, initialState);
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
@@ -57,24 +55,25 @@ export function ConnectionForm({ currentTree }: ConnectionFormProps) {
       treeName: '',
       year: new Date().getFullYear(),
     },
-    context: state.errors,
   });
-
-  useEffect(() => {
-    if (state?.message && !Object.keys(state.errors ?? {}).length) {
-      toast({
+  
+  function onSubmit(data: z.infer<typeof FormSchema>) {
+    const finalTreeName = data.treeName || currentTree || 'Default Tree';
+    const newConnection = { ...data, treeName: finalTreeName };
+    onAddConnection(newConnection);
+    toast({
         title: 'Success!',
-        description: state.message,
-      });
-      form.reset();
-    } else if (state?.message) {
-      toast({
-        variant: 'destructive',
-        title: 'An error occurred',
-        description: state.message,
-      });
-    }
-  }, [state, toast, form]);
+        description: 'Connection added successfully.',
+    });
+    form.reset();
+     form.setValue('year', new Date().getFullYear());
+  }
+
+  // If the current tree selection changes, update the placeholder in the form
+  useEffect(() => {
+    form.setValue('treeName', '');
+  }, [currentTree, form]);
+
 
   return (
     <Card className="bg-transparent border-none shadow-none">
@@ -84,7 +83,7 @@ export function ConnectionForm({ currentTree }: ConnectionFormProps) {
       </CardHeader>
       <CardContent className="p-0">
         <Form {...form}>
-          <form action={dispatch} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
               name="big"
@@ -118,7 +117,7 @@ export function ConnectionForm({ currentTree }: ConnectionFormProps) {
                 <FormItem>
                   <FormLabel>Tree Name (Optional)</FormLabel>
                   <FormControl>
-                    <Input placeholder={currentTree} {...field} />
+                    <Input placeholder={currentTree !== 'No Trees Found' ? currentTree : 'Enter tree name'} {...field} />
                   </FormControl>
                   <FormDescription>Defaults to the current tree if left blank.</FormDescription>
                   <FormMessage />
