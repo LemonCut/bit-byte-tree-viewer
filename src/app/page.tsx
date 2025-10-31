@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
   Sidebar,
@@ -28,22 +28,81 @@ import {
 } from '@/components/ui/card';
 import type { Connection } from '@/lib/types';
 import { SearchDialog } from '@/components/search-dialog';
-import { useCollection } from '@/firebase';
+import { useCollection, useUser, useAuth } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
+import { GoogleAuthProvider, signInWithPopup, User } from 'firebase/auth';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
+
+// ** IMPORTANT: Replace with the actual administrator's email address **
+const ADMIN_EMAIL = 'admin@example.com';
+
+
+const SignInButton = () => {
+    const auth = useAuth();
+
+    const handleSignIn = async () => {
+        if (auth) {
+            const provider = new GoogleAuthProvider();
+            try {
+                await signInWithPopup(auth, provider);
+            } catch (error) {
+                console.error("Error signing in with Google: ", error);
+            }
+        }
+    };
+
+    return <Button onClick={handleSignIn}>Sign in with Google</Button>;
+};
+
+const AdminSignInPrompt = ({ user }: { user: User | null }) => {
+    const [dialogOpen, setDialogOpen] = useState(true);
+
+    if (user && user.email === ADMIN_EMAIL) {
+        return null;
+    }
+
+    return (
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Admin Access Required</DialogTitle>
+                    <DialogDescription>
+                        This application requires administrator access. Please sign in with the designated admin account.
+                    </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                    <SignInButton />
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+};
+
 
 export default function Home() {
   const searchParams = useSearchParams();
   const firestore = useFirestore();
+  const { user: authUser, loading: authLoading } = useUser();
 
-  const isAdmin = searchParams.get('admin') === 'true';
+  const isAdmin = authUser?.email === ADMIN_EMAIL;
 
   const connectionsQuery = useMemo(
     () => (firestore ? collection(firestore, 'connections') : null),
     [firestore]
   );
-  const { data: connections, loading } = useCollection<Connection>(connectionsQuery);
+  const { data: connections, loading: connectionsLoading } = useCollection<Connection>(connectionsQuery);
+
+  const loading = authLoading || connectionsLoading;
 
   const allTrees = useMemo(
     () => (connections ? getTrees(connections) : []),
@@ -136,8 +195,10 @@ export default function Home() {
     );
   }
 
+  // Regular user view or loading state
   return (
     <div className="flex flex-col h-screen">
+       {!authLoading && !authUser && <AdminSignInPrompt user={authUser} />}
       <header className="flex items-center justify-between p-4 border-b sticky top-0 bg-background/80 backdrop-blur-sm z-20 h-16 shrink-0">
         <div className="flex items-center gap-2">
           <TreeViewLogo className="w-8 h-8" />

@@ -26,7 +26,7 @@
     }
   },
   "auth": {
-    "providers": []
+    "providers": ["google.com"]
   },
   "firestore": {
     "/connections/{connectionId}": {
