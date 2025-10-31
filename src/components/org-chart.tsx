@@ -4,7 +4,8 @@ import { Chart } from 'react-google-charts';
 import type { TreeNode } from '@/lib/types';
 import { useEffect, useState, useRef } from 'react';
 import { Button } from './ui/button';
-import { ZoomIn, ZoomOut } from 'lucide-react';
+import { ZoomIn, ZoomOut, Download } from 'lucide-react';
+import type { GoogleChartWrapper } from 'react-google-charts';
 
 interface OrgChartProps {
   data: TreeNode[];
@@ -54,7 +55,7 @@ export function OrgChart({ data, currentTreeName }: OrgChartProps) {
     (string | { v: string; f: string } | null)[][]
   >([]);
   const [zoom, setZoom] = useState(1);
-
+  
 
   useEffect(() => {
     if (data && data.length > 0) {

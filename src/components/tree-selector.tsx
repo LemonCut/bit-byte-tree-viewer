@@ -7,6 +7,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  SelectSeparator,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 
@@ -14,9 +15,10 @@ type TreeSelectorProps = {
   trees: string[];
   defaultTree: string;
   className?: string;
+  hasUnassigned?: boolean;
 };
 
-export function TreeSelector({ trees, defaultTree, className }: TreeSelectorProps) {
+export function TreeSelector({ trees, defaultTree, className, hasUnassigned }: TreeSelectorProps) {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const { replace } = useRouter();
@@ -37,6 +39,14 @@ export function TreeSelector({ trees, defaultTree, className }: TreeSelectorProp
         <SelectValue placeholder="Select a tree" />
       </SelectTrigger>
       <SelectContent>
+        {hasUnassigned && (
+            <>
+                <SelectItem value="Unassigned">
+                    Unassigned
+                </SelectItem>
+                <SelectSeparator />
+            </>
+        )}
         {trees.map((tree) => (
           <SelectItem key={tree} value={tree}>
             {tree}

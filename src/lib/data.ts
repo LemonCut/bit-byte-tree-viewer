@@ -3,9 +3,24 @@ import type { Connection, TreeNode, SearchResult } from '@/lib/types';
 // This file is now primarily for the data transformation logic.
 // The data itself will be managed in the component's state.
 
-export function getTrees(connections: Connection[]): string[] {
-  const treeNames = new Set(connections.map((c) => c.treeName));
-  return Array.from(treeNames).sort();
+export function getTrees(connections: Connection[]): { allTrees: string[], hasUnassigned: boolean } {
+  const treeNames = new Set<string>();
+  let hasUnassigned = false;
+  connections.forEach((c) => {
+    if (c.treeName) {
+        treeNames.add(c.treeName);
+    } else {
+        hasUnassigned = true;
+    }
+  });
+  return {
+    allTrees: Array.from(treeNames).sort(),
+    hasUnassigned,
+  };
+}
+
+export function getUnassignedConnections(connections: Connection[]): Connection[] {
+    return connections.filter(c => !c.treeName);
 }
 
 export function getAllPeople(connections: Connection[]): string[] {
@@ -44,6 +59,7 @@ export function buildTree(
   connections: Connection[],
   treeName: string
 ): TreeNode[] {
+  if (treeName === 'Unassigned') return [];
   const relevantConnections = connections.filter(
     (c) => c.treeName === treeName
   );
