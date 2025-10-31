@@ -64,9 +64,10 @@ export function OrgChart({ data, highlightedNode, onHighlightComplete }: OrgChar
   useEffect(() => {
     if (highlightedNode && chartWrapperRef.current && chartData.length > 0) {
       const chartWrapper = chartWrapperRef.current;
+      const chart = chartWrapper.getChart();
       const dataTable = chartWrapper.getDataTable();
       
-      if (chartWrapper && dataTable) {
+      if (chart && dataTable) {
         // Find the row index of the node to highlight
         let rowIndex: number | null = null;
         // The ID in chartData is the `v` property of the first element in each row object.
@@ -80,11 +81,11 @@ export function OrgChart({ data, highlightedNode, onHighlightComplete }: OrgChar
         }
         
         if (rowIndex !== null) {
-            chartWrapper.getChart().setSelection([{ row: rowIndex, column: null }]);
+            (chart as any).setSelection([{ row: rowIndex, column: null }]);
             
             // Set a timer to remove the highlight
             setTimeout(() => {
-                chartWrapper.getChart().setSelection(null);
+                (chart as any).setSelection(null);
                 onHighlightComplete();
             }, 1500); // Highlight for 1.5 seconds
         } else {
