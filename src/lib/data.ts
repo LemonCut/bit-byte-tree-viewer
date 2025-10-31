@@ -17,6 +17,15 @@ export function getAllPeople(connections: Connection[]): string[] {
   return Array.from(people).sort();
 }
 
+export function getBytes(connections: Connection[]): string[] {
+  const bytes = new Set<string>();
+  connections.forEach((c) => {
+    bytes.add(c.byte);
+  });
+  return Array.from(bytes).sort();
+}
+
+
 export function getBits(connections: Connection[]): string[] {
   const bits = new Set<string>();
   connections.forEach((c) => {

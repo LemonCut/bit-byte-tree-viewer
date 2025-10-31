@@ -12,11 +12,12 @@ import {
   SidebarGroupLabel,
 } from '@/components/ui/sidebar';
 import { TreeViewLogo } from '@/components/icons';
-import { buildTree, getTrees, getBits, getAllPeople } from '@/lib/data';
+import { buildTree, getTrees, getBits, getAllPeople, getBytes } from '@/lib/data';
 import { TreeSelector } from '@/components/tree-selector';
 import { ConnectionForm } from '@/components/connection-form';
 import { DataManagement } from '@/components/data-management';
 import { RemovePersonForm } from '@/components/remove-person-form';
+import { ModifyConnectionForm } from '@/components/modify-connection-form';
 import { OrgChart } from '@/components/org-chart';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -52,6 +53,10 @@ export default function Home() {
     searchParams.get('tree') || allTrees[0] || 'No Trees Found';
   const allBits = useMemo(
     () => (connections ? getBits(connections) : []),
+    [connections]
+  );
+  const allBytes = useMemo(
+    () => (connections ? getBytes(connections) : []),
     [connections]
   );
   const allPeople = useMemo(
@@ -101,11 +106,15 @@ export default function Home() {
             </SidebarGroup>
             <Separator />
             <SidebarGroup>
-              <DataManagement connections={connections || []} />
+              <RemovePersonForm allPeople={allPeople} connections={connections || []} />
+            </SidebarGroup>
+             <Separator />
+            <SidebarGroup>
+                <ModifyConnectionForm allBits={allBits} allBytes={allBytes} allTrees={allTrees} connections={connections || []} />
             </SidebarGroup>
             <Separator />
             <SidebarGroup>
-              <RemovePersonForm allPeople={allPeople} connections={connections || []} />
+              <DataManagement connections={connections || []} />
             </SidebarGroup>
           </SidebarContent>
         </Sidebar>
