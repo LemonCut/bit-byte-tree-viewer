@@ -122,7 +122,7 @@ export function ConnectionForm({ currentTree, onAddConnection, allBits, connecti
       <Card className="bg-transparent border-none shadow-none">
         <CardHeader className="p-0 mb-4">
           <CardTitle className="text-lg">New Connection</CardTitle>
-          <CardDescription>Add a new byte/bit relationship.</CardDescription>
+          <CardDescription>Add a new bit/byte relationship.</CardDescription>
         </CardHeader>
         <CardContent className="p-0">
           <Form {...form}>

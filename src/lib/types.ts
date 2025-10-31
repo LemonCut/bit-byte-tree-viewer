@@ -11,3 +11,13 @@ export interface TreeNode {
   year?: number; // Year is optional as root nodes might not have one
   children: TreeNode[];
 }
+
+export interface SearchResult {
+  name: string;
+  connections: {
+    treeName: string;
+    year: number | null;
+    byte: string | null;
+    isRoot: boolean;
+  }[];
+}

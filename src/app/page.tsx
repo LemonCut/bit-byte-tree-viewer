@@ -21,6 +21,7 @@ import { Separator } from '@/components/ui/separator';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import type { Connection } from '@/lib/types';
 import { CsvImporter } from '@/components/csv-importer';
+import { SearchDialog } from '@/components/search-dialog';
 
 // Initial empty state for connections
 const initialConnections: Connection[] = [];
@@ -80,6 +81,7 @@ export default function Home() {
              <SidebarTrigger className="md:hidden" />
              <h2 className="text-2xl font-bold tracking-tight">{pageTitle}</h2>
           </div>
+          <SearchDialog connections={connections} />
         </header>
         <main className="p-4 md:p-6 lg:p-8">
           {connections.length === 0 && (

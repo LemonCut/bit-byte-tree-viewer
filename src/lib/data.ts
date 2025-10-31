@@ -1,4 +1,4 @@
-import type { Connection, TreeNode } from '@/lib/types';
+import type { Connection, TreeNode, SearchResult } from '@/lib/types';
 
 // This file is now primarily for the data transformation logic.
 // The data itself will be managed in the component's state.
@@ -76,4 +76,63 @@ export function buildTree(
   );
 
   return rootNodes;
+}
+
+export function searchPeople(connections: Connection[], query: string): SearchResult[] {
+  if (!query) return [];
+
+  const lowerCaseQuery = query.toLowerCase();
+  const people = new Map<string, SearchResult>();
+
+  connections.forEach(({ bit, byte, treeName, year }) => {
+    // Check bit
+    if (bit.toLowerCase().includes(lowerCaseQuery)) {
+      if (!people.has(bit)) {
+        people.set(bit, {
+          name: bit,
+          connections: [],
+        });
+      }
+      people.get(bit)!.connections.push({
+        treeName: treeName,
+        year: year,
+        byte: byte,
+        isRoot: false
+      });
+    }
+
+    // Check byte
+    if (byte.toLowerCase().includes(lowerCaseQuery)) {
+      const isRoot = !connections.some(c => c.bit === byte && c.treeName === treeName);
+
+      if (!people.has(byte)) {
+        people.set(byte, {
+          name: byte,
+          connections: [],
+        });
+      }
+      
+      const existingConnection = people.get(byte)!.connections.find(c => c.treeName === treeName);
+      if (!existingConnection) {
+         // Find if this byte is a bit in the same tree to avoid duplicate entries
+        const isAlsoBitInSameTree = connections.some(c => c.bit === byte && c.treeName === treeName);
+        if (!isAlsoBitInSameTree) {
+            people.get(byte)!.connections.push({
+                treeName: treeName,
+                isRoot: isRoot,
+                byte: null,
+                year: null,
+            });
+        }
+      } else if (existingConnection.isRoot === false && isRoot) {
+          // If we have a non-root entry but determine it's a root, update it.
+          // This case is unlikely if data is processed linearly but good for safety.
+          existingConnection.isRoot = true;
+          existingConnection.byte = null;
+          existingConnection.year = null;
+      }
+    }
+  });
+
+  return Array.from(people.values()).sort((a, b) => a.name.localeCompare(b.name));
 }
