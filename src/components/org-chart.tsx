@@ -37,7 +37,7 @@ function formatDataForGoogleChart(
       
       // If the node is a root node, append the tree name and "Root"
       if (rootNodeIds.has(nodeId)) {
-        nodeName = `${node.name}<div style="color:red; font-style:italic">${treeName} Root</div>`;
+        nodeName = `<div>${node.name} <span style="font-size:0.8em; color:grey;">(${treeName} Root)</span></div>`;
       }
       
       const nodeParent = parent;
