@@ -3,6 +3,8 @@
 import { Chart } from 'react-google-charts';
 import type { TreeNode } from '@/lib/types';
 import { useEffect, useState } from 'react';
+import { Button } from './ui/button';
+import { ZoomIn, ZoomOut } from 'lucide-react';
 
 interface OrgChartProps {
   data: TreeNode[];
@@ -51,6 +53,7 @@ export function OrgChart({ data, currentTreeName }: OrgChartProps) {
   const [chartData, setChartData] = useState<
     (string | { v: string; f: string } | null)[][]
   >([]);
+  const [zoom, setZoom] = useState(1);
 
   useEffect(() => {
     if (data && data.length > 0) {
@@ -60,23 +63,41 @@ export function OrgChart({ data, currentTreeName }: OrgChartProps) {
     }
   }, [data, currentTreeName]);
 
+  const handleZoomIn = () => setZoom((prev) => prev + 0.1);
+  const handleZoomOut = () => setZoom((prev) => Math.max(0.2, prev - 0.1));
+
   if (!data || data.length === 0) {
     return null;
   }
 
   return (
-    <div className="w-full h-full">
-      <Chart
-        chartType="OrgChart"
-        data={chartData}
-        width="100%"
-        height="400px"
-        options={{
-          allowHtml: true,
-          nodeClass: 'google-chart-node',
-          selectedNodeClass: 'google-chart-node-selected',
-        }}
-      />
+    <div className="relative w-full h-full">
+        <div className="absolute top-0 right-0 z-10 flex gap-2">
+            <Button variant="outline" size="icon" onClick={handleZoomIn}>
+                <ZoomIn className="h-4 w-4" />
+                <span className="sr-only">Zoom In</span>
+            </Button>
+            <Button variant="outline" size="icon" onClick={handleZoomOut}>
+                <ZoomOut className="h-4 w-4" />
+                <span className="sr-only">Zoom Out</span>
+            </Button>
+        </div>
+      <div className="w-full h-[calc(100%-40px)] overflow-auto">
+        <div style={{ transform: `scale(${zoom})`, transformOrigin: 'top left', width: `${100 / zoom}%`, height: `${100 / zoom}%` }}>
+            <Chart
+                chartType="OrgChart"
+                data={chartData}
+                width="100%"
+                height="400px"
+                options={{
+                    allowHtml: true,
+                    nodeClass: 'google-chart-node',
+                    selectedNodeClass: 'google-chart-node-selected',
+                    size: 'large', // Ensures the nodes are large enough to be readable
+                }}
+            />
+        </div>
+      </div>
     </div>
   );
 }

@@ -47,7 +47,7 @@ export default function Home() {
     () => (firestore ? collection(firestore, 'connections') : null),
     [firestore]
   );
-  const { data: connections, loading: connectionsLoading } = useCollection<Connection>(connectionsQuery);
+  const { data: connections, isLoading: connectionsLoading } = useCollection<Connection>(connectionsQuery);
 
   const loading = connectionsLoading;
   
@@ -203,7 +203,7 @@ const OrgChartWrapper = ({ loading, connections, treeData, currentTreeName, tree
   }
 
   return (
-    <>
+    <div className="h-[calc(100%-40px)]">
       {loading && (
         <Card className="mt-4">
           <CardHeader>
@@ -238,6 +238,6 @@ const OrgChartWrapper = ({ loading, connections, treeData, currentTreeName, tree
           </CardHeader>
         </Card>
       )}
-    </>
+    </div>
   )
 }
