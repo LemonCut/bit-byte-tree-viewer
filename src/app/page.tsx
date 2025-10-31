@@ -12,7 +12,7 @@ import {
   SidebarGroupLabel,
 } from '@/components/ui/sidebar';
 import { TreeViewLogo } from '@/components/icons';
-import { buildTree, getTrees, getBits, getAllPeople, getBytes } from '@/lib/data';
+import { buildTree, getTrees, getBits, getAllPeople, getBytes, findTreeAKAs } from '@/lib/data';
 import { TreeSelector } from '@/components/tree-selector';
 import { ConnectionForm } from '@/components/connection-form';
 import { DataManagement } from '@/components/data-management';
@@ -58,6 +58,11 @@ export default function Home() {
     () => (connections ? getTrees(connections) : { allTrees: [] }),
     [connections]
   );
+
+  const treeAKAs = useMemo(
+    () => (connections ? findTreeAKAs(connections) : {}),
+    [connections]
+  );
   
   const currentTreeName = treeParam || allTrees[0] || 'No Trees Found';
 
@@ -82,8 +87,13 @@ export default function Home() {
   );
   
   let pageTitle = 'Welcome';
+  let pageSubTitle = '';
   if (treeParam) {
     pageTitle = `${treeParam} Tree`;
+    const akaName = treeAKAs[treeParam];
+    if (akaName) {
+      pageSubTitle = `AKA ${akaName} Tree`;
+    }
   }
 
 
@@ -143,7 +153,10 @@ export default function Home() {
           <header className="flex items-center justify-between p-4 border-b sticky top-0 bg-background/80 backdrop-blur-sm z-10 h-16 shrink-0">
             <div className="flex items-center gap-4">
               <SidebarTrigger className="md:hidden" />
-              <h2 className="text-2xl font-bold tracking-tight">{pageTitle}</h2>
+               <div>
+                  <h2 className="text-2xl font-bold tracking-tight">{pageTitle}</h2>
+                  {pageSubTitle && <p className="text-sm text-muted-foreground">{pageSubTitle}</p>}
+              </div>
             </div>
             <SearchDialog connections={connections || []} />
           </header>
@@ -179,7 +192,10 @@ export default function Home() {
         </div>
         <main className="h-full overflow-auto">
           <div className="p-4 md:p-6 lg:p-8 h-full overflow-auto">
-             <h2 className="text-2xl font-bold tracking-tight mb-4">{pageTitle}</h2>
+             <div className="mb-4">
+                <h2 className="text-2xl font-bold tracking-tight">{pageTitle}</h2>
+                {pageSubTitle && <p className="text-sm text-muted-foreground">{pageSubTitle}</p>}
+            </div>
             <OrgChartWrapper loading={loading} connections={connections} treeData={treeData} currentTreeName={currentTreeName} treeParam={treeParam} />
           </div>
         </main>

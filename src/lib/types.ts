@@ -25,3 +25,7 @@ export interface SearchResult {
     isRoot: boolean;
   }[];
 }
+
+export interface TreeAKA {
+  [originalName: string]: string;
+}

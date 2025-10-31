@@ -1,4 +1,4 @@
-import type { Connection, TreeNode, SearchResult } from '@/lib/types';
+import type { Connection, TreeNode, SearchResult, TreeAKA } from '@/lib/types';
 
 // This file is now primarily for the data transformation logic.
 // The data itself will be managed in the component's state.
@@ -7,17 +7,11 @@ export function getTrees(connections: Connection[]): { allTrees: string[] } {
   const treeNames = new Set<string>();
   let hasUnassigned = false;
   connections.forEach((c) => {
-    if (c.treeName) {
-        treeNames.add(c.treeName);
-    } else {
-        hasUnassigned = true;
-    }
+    const treeName = c.treeName || '(None)';
+    treeNames.add(treeName);
   });
 
   const sortedTrees = Array.from(treeNames).sort();
-  if (hasUnassigned) {
-      sortedTrees.push('(None)');
-  }
   
   return {
     allTrees: sortedTrees,
@@ -198,4 +192,34 @@ export function searchPeople(connections: Connection[], query: string): SearchRe
   return results;
 }
 
-    
+export function findTreeAKAs(connections: Connection[]): TreeAKA {
+  if (!connections || connections.length === 0) return {};
+
+  const treeAKAs: TreeAKA = {};
+  const allTrees = Array.from(new Set(connections.map(c => c.treeName || '(None)')));
+
+  allTrees.forEach(treeName => {
+    // Find root bytes for the current tree
+    const connectionsInTree = connections.filter(c => (c.treeName || '(None)') === treeName);
+    const bitsInTree = new Set(connectionsInTree.map(c => c.bit));
+    const rootBytesInTree = new Set(
+      connectionsInTree.filter(c => !bitsInTree.has(c.byte)).map(c => c.byte)
+    );
+
+    // For each root byte, see if they were a bit in another tree
+    rootBytesInTree.forEach(rootByte => {
+      const connectionAsBit = connections.find(c => c.bit === rootByte);
+
+      if (connectionAsBit) {
+        const originalTree = connectionAsBit.treeName || '(None)';
+        if (originalTree !== treeName) {
+            // Found a link: originalTree is AKA the current treeName
+            // We store it so we can look up the "new" name from the "old" one.
+            treeAKAs[originalTree] = treeName;
+        }
+      }
+    });
+  });
+
+  return treeAKAs;
+}
