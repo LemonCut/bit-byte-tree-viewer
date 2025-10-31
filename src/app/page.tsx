@@ -28,7 +28,7 @@ import {
 } from '@/components/ui/card';
 import type { Connection } from '@/lib/types';
 import { SearchDialog } from '@/components/search-dialog';
-import { useCollection, useUser, useAuth } from '@/firebase';
+import { useCollection, useUser, useAuth, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -107,7 +107,7 @@ export default function Home() {
     setIsAttemptingAdmin(true);
   };
   
-  const connectionsQuery = useMemo(
+  const connectionsQuery = useMemoFirebase(
     () => (firestore ? collection(firestore, 'connections') : null),
     [firestore]
   );
