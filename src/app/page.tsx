@@ -88,7 +88,7 @@ export default function Home() {
           </SidebarGroup>
         </SidebarContent>
       </Sidebar>
-      <SidebarInset>
+      <div className="flex flex-col flex-1">
         <header className="flex items-center justify-between p-4 border-b sticky top-0 bg-background/80 backdrop-blur-sm z-10 h-16">
           <div className="flex items-center gap-4">
             <SidebarTrigger className="md:hidden" />
@@ -96,33 +96,35 @@ export default function Home() {
           </div>
           <SearchDialog connections={connections} />
         </header>
-        <main className="p-4 md:p-6 lg:p-8">
-          {connections.length === 0 && (
-            <Card className="mt-4">
-              <CardHeader>
-                <CardTitle>No Data Loaded</CardTitle>
-                <CardDescription>
-                  Upload a CSV file or add a connection to get started.
-                </CardDescription>
-              </CardHeader>
-            </Card>
-          )}
-          {connections.length > 0 && treeData.length > 0 && (
-            <OrgChart data={treeData} />
-          )}
-          {connections.length > 0 && treeData.length === 0 && (
-            <Card className="mt-4">
-              <CardHeader>
-                <CardTitle>No Data</CardTitle>
-                <CardDescription>
-                  No connections found for the '{currentTreeName}' tree. Try
-                  selecting another tree or adding a new connection.
-                </CardDescription>
-              </CardHeader>
-            </Card>
-          )}
-        </main>
-      </SidebarInset>
+        <SidebarInset>
+          <main className="p-4 md:p-6 lg:p-8">
+            {connections.length === 0 && (
+              <Card className="mt-4">
+                <CardHeader>
+                  <CardTitle>No Data Loaded</CardTitle>
+                  <CardDescription>
+                    Upload a CSV file or add a connection to get started.
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+            )}
+            {connections.length > 0 && treeData.length > 0 && (
+              <OrgChart data={treeData} />
+            )}
+            {connections.length > 0 && treeData.length === 0 && (
+              <Card className="mt-4">
+                <CardHeader>
+                  <CardTitle>No Data</CardTitle>
+                  <CardDescription>
+                    No connections found for the '{currentTreeName}' tree. Try
+                    selecting another tree or adding a new connection.
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+            )}
+          </main>
+        </SidebarInset>
+      </div>
     </SidebarProvider>
   );
 }
