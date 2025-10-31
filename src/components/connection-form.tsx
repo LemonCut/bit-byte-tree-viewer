@@ -4,8 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useFormState } from 'react-dom';
-import { useEffect, useTransition } from 'react';
-import { Loader2, Wand2 } from 'lucide-react';
+import { useEffect } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,7 +24,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { addConnection, getSuggestedNamesAction } from '@/app/actions';
+import { addConnection } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 
 const FormSchema = z.object({
@@ -46,7 +45,6 @@ type ConnectionFormProps = {
 };
 
 export function ConnectionForm({ currentTree }: ConnectionFormProps) {
-  const [isSuggesting, startSuggestionTransition] = useTransition();
   const { toast } = useToast();
 
   const initialState = { message: null, errors: {} };
@@ -78,26 +76,6 @@ export function ConnectionForm({ currentTree }: ConnectionFormProps) {
       });
     }
   }, [state, toast, form]);
-
-  const handleSuggestNames = () => {
-    startSuggestionTransition(async () => {
-      const result = await getSuggestedNamesAction(currentTree);
-      if (result.success && result.data) {
-        form.setValue('big', result.data.suggestedBigName);
-        form.setValue('little', result.data.suggestedLittleName);
-        toast({
-          title: 'Suggestions Applied!',
-          description: `AI suggested "${result.data.suggestedBigName}" and "${result.data.suggestedLittleName}".`,
-        });
-      } else {
-        toast({
-          variant: 'destructive',
-          title: 'Suggestion Failed',
-          description: result.error || 'Could not get AI suggestions.',
-        });
-      }
-    });
-  };
 
   return (
     <Card className="bg-transparent border-none shadow-none">
@@ -162,20 +140,6 @@ export function ConnectionForm({ currentTree }: ConnectionFormProps) {
               )}
             />
             
-            <Button
-              type="button"
-              onClick={handleSuggestNames}
-              disabled={isSuggesting}
-              variant="outline"
-              className="w-full"
-            >
-              {isSuggesting ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Wand2 className="mr-2 h-4 w-4" />
-              )}
-              Suggest Names with AI
-            </Button>
             <Button type="submit" className="w-full">
               Add Connection
             </Button>
