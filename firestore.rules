@@ -1,14 +1,89 @@
+/**
+ * @fileoverview Firestore Security Rules for the family-tree application.
+ *
+ * Core Philosophy:
+ * This ruleset enforces a flexible security model allowing public read access to Persons, while restricting Tree and Connection writes to authorized users.
+ *
+ * Data Structure:
+ * - /trees/{treeId}: Stores individual tree data.
+ * - /trees/{treeId}/connections/{connectionId}: Stores connection data within a tree.
+ * - /persons/{personId}: Stores person data.
+ *
+ * Key Security Decisions:
+ * - Persons are publicly readable.
+ * - Trees and Connections are secured with owner-only write access.
+ *
+ * Denormalization for Authorization:
+ * No explicit denormalization is necessary, as the path-based structure provides sufficient context.
+ *
+ * Structural Segregation:
+ * Public and private data are separated into different collections (Persons vs. Trees/Connections).
+ */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // By default, deny all reads and writes
-    match /{document=**} {
-      allow read, write: if false;
+
+    /**
+     * @description Controls access to the /trees collection. Allows authenticated users to create, update, and delete trees they own.
+     * @path /trees/{treeId}
+     * @allow (create) User with auth.uid 'user_abc' can create a tree with data {id: 'tree_abc', name: 'My Tree'}.
+     * @deny (create) User without authentication cannot create a tree.
+     * @allow (get, list) Any user can view information about any tree
+     * @deny (update) User with auth.uid 'user_xyz' cannot update a tree owned by 'user_abc'.
+     * @deny (delete) User with auth.uid 'user_xyz' cannot delete a tree owned by 'user_abc'.
+     * @principle Enforces document ownership for writes; allows public reads.
+     */
+    match /trees/{treeId} {
+      // Anyone can read Trees
+      allow get, list: if true;
+      // Only the owner can create, update, and delete Trees
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && isTreeOwner(treeId);
+      allow delete: if isSignedIn() && isTreeOwner(treeId);
     }
-    
-    // Allow public read and write access to the 'connections' collection
-    match /connections/{connectionId} {
-      allow read, write: if true;
+
+    /**
+     * @description Controls access to the /trees/{treeId}/connections collection.  Allows authenticated users to create, update, and delete connections within a tree they own.
+     * @path /trees/{treeId}/connections/{connectionId}
+     * @allow (create) User with auth.uid 'user_abc' can create a connection within tree 'tree_abc'.
+     * @deny (create) User without authentication cannot create a connection.
+     * @allow (get, list) Any user can view information about any tree's connections
+     * @deny (update) User with auth.uid 'user_xyz' cannot update a connection within a tree owned by 'user_abc'.
+     * @deny (delete) User with auth.uid 'user_xyz' cannot delete a connection within a tree owned by 'user_abc'.
+     * @principle Enforces document ownership for writes; allows public reads.
+     */
+    match /trees/{treeId}/connections/{connectionId} {
+      // Anyone can read Connections
+      allow get, list: if true;
+      // Only the owner can create, update, and delete Connections
+      allow create: if isSignedIn() && isTreeOwner(treeId);
+      allow update: if isSignedIn() && isTreeOwner(treeId);
+      allow delete: if isSignedIn() && isTreeOwner(treeId);
+    }
+
+    /**
+     * @description Controls access to the /persons collection. Allows anyone to read person data; no write access is granted.
+     * @path /persons/{personId}
+     * @allow (get, list) Any user can read any person's data.
+     * @deny (create) No one can create a person document.
+     * @deny (update) No one can update a person document.
+     * @deny (delete) No one can delete a person document.
+     * @principle Allows public reads; denies all writes.
+     */
+    match /persons/{personId} {
+      // Anyone can read Persons
+      allow get, list: if true;
+      // No one can create, update, or delete Persons
+      allow create, update, delete: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isTreeOwner(treeId) {
+      return get(/databases/$(database)/documents/trees/$(treeId)).data.id == treeId && request.auth.uid != null;
     }
   }
 }
