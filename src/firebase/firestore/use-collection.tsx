@@ -1,3 +1,5 @@
+'use client';
+
 // src/firebase/firestore/use-collection.tsx
 import { useState, useEffect } from 'react';
 import {
