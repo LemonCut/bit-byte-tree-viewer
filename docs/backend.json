@@ -4,7 +4,7 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Tree",
       "type": "object",
-      "description": "Represents a tree within the organization.",
+      "description": "Represents a tree within the organization, defining a specific hierarchical structure.",
       "properties": {
         "id": {
           "type": "string",
@@ -12,7 +12,11 @@
         },
         "name": {
           "type": "string",
-          "description": "Name of the tree."
+          "description": "The name of the tree (e.g., 'Alpha Tree', 'Beta Tree')."
+        },
+        "description": {
+          "type": "string",
+          "description": "A description of the tree, providing additional context."
         }
       },
       "required": [
@@ -24,7 +28,7 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Byte",
       "type": "object",
-      "description": "Represents a byte in the tree hierarchy.",
+      "description": "Represents a 'byte' or individual within the tree.",
       "properties": {
         "id": {
           "type": "string",
@@ -32,7 +36,7 @@
         },
         "name": {
           "type": "string",
-          "description": "Name of the byte."
+          "description": "The name of the byte."
         },
         "treeId": {
           "type": "string",
@@ -49,7 +53,7 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Connection",
       "type": "object",
-      "description": "Represents a connection between two bytes (big and little).",
+      "description": "Represents a connection between two bytes (big and little) within a tree.",
       "properties": {
         "id": {
           "type": "string",
@@ -57,15 +61,15 @@
         },
         "bigId": {
           "type": "string",
-          "description": "Reference to Byte (the 'big' in the connection)."
+          "description": "Reference to the 'big' Byte in the connection. (Relationship: Byte 1:N Connection)"
         },
         "littleId": {
           "type": "string",
-          "description": "Reference to Byte (the 'little' in the connection)."
+          "description": "Reference to the 'little' Byte in the connection. (Relationship: Byte 1:N Connection)"
         },
         "yearOfPickup": {
           "type": "number",
-          "description": "The year the connection was established."
+          "description": "The year in which the connection was established."
         }
       },
       "required": [
@@ -79,12 +83,27 @@
   "auth": {
     "providers": [
       "password",
-      "anonymous",
-      "google.com"
+      "anonymous"
     ]
   },
   "firestore": {
     "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "user",
+          "schema": {
+            "$ref": "#/backend/entities/user"
+          },
+          "description": "Path for storing user-specific data.  Access is restricted to the authenticated user via `request.auth.uid == userId`.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user, matching the Firebase Auth UID."
+            }
+          ]
+        }
+      },
       {
         "path": "/trees/{treeId}",
         "definition": {
@@ -92,7 +111,7 @@
           "schema": {
             "$ref": "#/backend/entities/Tree"
           },
-          "description": "Stores tree data. Includes denormalized fields (if any) to support Authorization Independence.",
+          "description": "Collection of trees within the organization.  Access control can be managed at the tree level (e.g., via a members subcollection, not implemented in this basic design).",
           "params": [
             {
               "name": "treeId",
@@ -108,11 +127,11 @@
           "schema": {
             "$ref": "#/backend/entities/Byte"
           },
-          "description": "Stores byte data. Includes 'treeId' to enable list operations scoped to a specific tree. Includes denormalized fields (if any) to support Authorization Independence.",
+          "description": "Subcollection of bytes associated with a specific tree. Includes denormalized 'treeId' for authorization independence.",
           "params": [
             {
               "name": "treeId",
-              "description": "The unique identifier for the parent tree."
+              "description": "The unique identifier for the tree."
             },
             {
               "name": "byteId",
@@ -128,11 +147,11 @@
           "schema": {
             "$ref": "#/backend/entities/Connection"
           },
-          "description": "Stores connection data between bytes within a tree. Includes denormalized 'treeId' to allow for atomic security rules. Includes 'bigId', 'littleId' and 'yearOfPickup'.",
+          "description": "Subcollection of connections associated with a specific tree. Includes denormalized 'treeId' for authorization independence.",
           "params": [
             {
               "name": "treeId",
-              "description": "The unique identifier for the parent tree."
+              "description": "The unique identifier for the tree."
             },
             {
               "name": "connectionId",
@@ -140,8 +159,24 @@
             }
           ]
         }
+      },
+      {
+        "path": "/roles_admin/{userId}",
+        "definition": {
+          "entityName": "admin",
+          "schema": {
+            "$ref": "#/backend/entities/user"
+          },
+          "description": "Indicates admin role via document existence. No content is required. Use existence checks in rules. DBAC.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            }
+          ]
+        }
       }
     ],
-    "reasoning": "The Firestore structure is designed to provide a secure and scalable solution for the TreeView application, focusing on clear authorization and data integrity. The design emphasizes Authorization Independence, eliminating the need for `get()` calls in security rules, which is crucial for atomic operations and debuggability. Structural Segregation ensures that collections have homogeneous security needs, simplifying rule creation.\n\nThe `trees` collection stores the basic information about each tree. Access control is not specified, but this can be expanded to include ownership or membership if required. The `bytes` subcollection under each tree stores individual byte data. Critically, each byte document includes the `treeId` to maintain a direct link to the parent tree for easy querying and to enable list operations scoped to a specific tree. The `connections` subcollection, nested under each tree, stores the connections between bytes within that tree. Each connection document includes `bigId`, `littleId`, and `yearOfPickup`. This structure allows for efficient querying of connections within a specific tree and direct enforcement of data integrity rules at the connection level, all while avoiding `get()` calls in security rules by denormalizing the `treeId` into the connection document.\n\nThis design facilitates simple, robust, and easily debuggable security rules because authorization checks can be performed directly on the requested document without needing to traverse the document hierarchy."
+    "reasoning": "The Firestore structure is designed to address the 'auth/operation-not-allowed' error, which typically indicates an issue with Firebase Authentication settings or usage. Since the error arises from Firebase Auth, the structure focuses on securely managing user-related data and roles without direct database-enforced access control (DBAC) for authentication operations themselves. The recommended setup includes path-based ownership for user-specific data and separate collections for entities with more complex access control needs. No custom claims are used, as per the instructions; user roles/access are determined by the existence of documents in specific role collections (DBAC via document existence).  Authorization independence is achieved by avoiding `get()` calls in security rules and relying on path-based ownership and explicit role checks. Segregation ensures that each collection has homogeneous security requirements.\n\nThe structure supports QAPs via:\n\n1.  **Path-based ownership for users:**  The `/users/{userId}` path ensures that only the authenticated user can access their specific data.\n2.  **Tree ownership:** The `/trees/{treeId}` path allows for centralized management and potentially broader access control (e.g., via a 'members' subcollection with role-based access, if required in the future).\n3.  **Byte and Connection data segregation within trees:** Storing Bytes and Connections under the `/trees/{treeId}` path provides a clear hierarchy and enables efficient querying and listing of these entities within a specific tree context.\n\nThis design facilitates debugging by making authorization intent explicit in the path structure and security rules. The absence of complex dependencies and the clear separation of concerns contribute to a more maintainable and secure application."
   }
 }
