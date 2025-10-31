@@ -42,6 +42,8 @@ export default function Home() {
   const handleDataLoaded = (data: Connection[]) => {
     setConnections(data);
   }
+  
+  const pageTitle = currentTreeName === 'No Trees Found' ? currentTreeName : `${currentTreeName} Tree`;
 
   return (
     <SidebarProvider>
@@ -76,7 +78,7 @@ export default function Home() {
         <header className="flex items-center justify-between p-4 border-b sticky top-0 bg-background/80 backdrop-blur-sm z-10 h-16">
           <div className="flex items-center gap-4">
              <SidebarTrigger className="md:hidden" />
-             <h2 className="text-2xl font-bold tracking-tight">{currentTreeName}</h2>
+             <h2 className="text-2xl font-bold tracking-tight">{pageTitle}</h2>
           </div>
         </header>
         <main className="p-4 md:p-6 lg:p-8">
