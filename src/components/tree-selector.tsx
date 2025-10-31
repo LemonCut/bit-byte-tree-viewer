@@ -39,20 +39,22 @@ export function TreeSelector({ trees, defaultTree, className, hasUnassigned }: T
         <SelectValue placeholder="Select a tree" />
       </SelectTrigger>
       <SelectContent>
-        {hasUnassigned && (
-            <>
-                <SelectItem value="Unassigned">
-                    Unassigned
-                </SelectItem>
-                <SelectSeparator />
-            </>
-        )}
         {trees.map((tree) => (
           <SelectItem key={tree} value={tree}>
             {tree}
           </SelectItem>
         ))}
+        {hasUnassigned && (
+            <>
+                <SelectSeparator />
+                <SelectItem value="(None)">
+                    (None)
+                </SelectItem>
+            </>
+        )}
       </SelectContent>
     </Select>
   );
 }
+
+    

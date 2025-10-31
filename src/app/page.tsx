@@ -95,7 +95,7 @@ export default function Home() {
   );
   
   let pageTitle = 'Welcome';
-  if (treeParam === 'Unassigned') {
+  if (treeParam === '(None)') {
     pageTitle = 'Unassigned Connections';
   } else if (treeParam) {
     pageTitle = `${treeParam} Tree`;
@@ -236,7 +236,7 @@ const OrgChartWrapper = ({ loading, connections, treeData, currentTreeName, tree
     );
   }
   
-  if (treeParam === 'Unassigned') {
+  if (treeParam === '(None)') {
     if (unassignedConnections.length === 0) {
        return (
             <Card className="mt-4">
@@ -297,7 +297,7 @@ const OrgChartWrapper = ({ loading, connections, treeData, currentTreeName, tree
       {treeData.length > 0 && (
         <OrgChart data={treeData} currentTreeName={currentTreeName} />
       )}
-      {treeData.length === 0 && treeParam && treeParam !== 'Unassigned' && (
+      {treeData.length === 0 && treeParam && treeParam !== '(None)' && (
         <Card className="mt-4">
           <CardHeader>
             <CardTitle>No Data in Tree</CardTitle>
@@ -311,3 +311,5 @@ const OrgChartWrapper = ({ loading, connections, treeData, currentTreeName, tree
     </div>
   )
 }
+
+    

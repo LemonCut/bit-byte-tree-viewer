@@ -59,7 +59,7 @@ export function buildTree(
   connections: Connection[],
   treeName: string
 ): TreeNode[] {
-  if (treeName === 'Unassigned') return [];
+  if (treeName === '(None)') return [];
   const relevantConnections = connections.filter(
     (c) => c.treeName === treeName
   );
@@ -196,3 +196,5 @@ export function searchPeople(connections: Connection[], query: string): SearchRe
   
   return results;
 }
+
+    
