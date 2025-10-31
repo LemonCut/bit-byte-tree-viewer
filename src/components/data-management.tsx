@@ -59,12 +59,12 @@ export function DataManagement({ connections }: DataManagementProps) {
           newConnections.forEach((conn) => {
             // Validate required fields and convert year to a number
             const year = Number(conn.year);
-            if (conn.byte && conn.bit && conn.treeName && !isNaN(year)) {
+            if (conn.byte && conn.bit && conn.tree && !isNaN(year)) {
                const docRef = doc(connectionsCollection);
                batch.set(docRef, { 
                    byte: conn.byte,
                    bit: conn.bit,
-                   treeName: conn.treeName,
+                   treeName: conn.tree,
                    year: year 
                 });
                validConnectionsCount++;
@@ -117,9 +117,9 @@ export function DataManagement({ connections }: DataManagementProps) {
     
     // We only want to export the core fields, not Firestore-specific ones like `id`
     const exportData = connections.map(({ byte, bit, treeName, year }) => ({
-        byte,
         bit,
-        treeName,
+        byte,
+        tree: treeName,
         year,
     }));
 
@@ -148,7 +148,7 @@ export function DataManagement({ connections }: DataManagementProps) {
       <CardHeader className="p-0 mb-4">
         <CardTitle className="text-lg">Data Management</CardTitle>
         <CardDescription>
-          Import or export your data. CSV must include headers: bit, byte, treeName, year.
+          Import or export your data. CSV must include headers: bit, byte, tree, year.
         </CardDescription>
       </CardHeader>
       <CardContent className="p-0 flex flex-col space-y-2">
