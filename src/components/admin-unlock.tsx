@@ -7,14 +7,14 @@ export function AdminUnlock({ onUnlock }: { onUnlock: () => void }) {
   
   return (
     <>
-      <div className="group fixed bottom-4 right-4 h-12 w-12 z-50">
+      <div className="group fixed bottom-4 left-4 h-12 w-12 z-50">
         <Button
           onClick={onUnlock}
           variant="outline"
           size="icon"
           className="
-            absolute right-0 h-12 w-12 rounded-full
-            translate-x-16 group-hover:translate-x-0 transition-transform duration-300 ease-in-out
+            absolute left-0 h-12 w-12 rounded-full
+            -translate-x-16 group-hover:translate-x-0 transition-transform duration-300 ease-in-out
             shadow-lg
           "
         >

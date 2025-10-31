@@ -72,7 +72,7 @@ export function OrgChart({ data, currentTreeName }: OrgChartProps) {
 
   return (
     <div className="relative w-full h-full">
-        <div className="absolute top-0 right-0 z-10 flex gap-2">
+        <div className="absolute bottom-4 right-4 z-10 flex gap-2">
             <Button variant="outline" size="icon" onClick={handleZoomIn}>
                 <ZoomIn className="h-4 w-4" />
                 <span className="sr-only">Zoom In</span>
@@ -82,7 +82,7 @@ export function OrgChart({ data, currentTreeName }: OrgChartProps) {
                 <span className="sr-only">Zoom Out</span>
             </Button>
         </div>
-      <div className="w-full h-[calc(100%-40px)] overflow-auto">
+      <div className="w-full h-full overflow-auto">
         <div style={{ transform: `scale(${zoom})`, transformOrigin: 'top left', width: `${100 / zoom}%`, height: `${100 / zoom}%` }}>
             <Chart
                 chartType="OrgChart"
