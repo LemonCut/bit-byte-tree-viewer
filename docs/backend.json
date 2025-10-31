@@ -4,7 +4,7 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Tree",
       "type": "object",
-      "description": "Represents a tree or organizational chart within the application.",
+      "description": "Represents a tree within the organization.",
       "properties": {
         "id": {
           "type": "string",
@@ -12,79 +12,74 @@
         },
         "name": {
           "type": "string",
-          "description": "The name of the tree."
-        },
-        "description": {
-          "type": "string",
-          "description": "A description of the tree."
+          "description": "Name of the tree."
         }
       },
       "required": [
         "id",
         "name"
+      ]
+    },
+    "Byte": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Byte",
+      "type": "object",
+      "description": "Represents a byte in the tree hierarchy.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Byte entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the byte."
+        },
+        "treeId": {
+          "type": "string",
+          "description": "Reference to Tree. (Relationship: Tree 1:N Byte)"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "treeId"
       ]
     },
     "Connection": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Connection",
       "type": "object",
-      "description": "Represents a connection (relationship) between two individuals within a tree.",
+      "description": "Represents a connection between two bytes (big and little).",
       "properties": {
         "id": {
           "type": "string",
           "description": "Unique identifier for the Connection entity."
         },
-        "treeId": {
-          "type": "string",
-          "description": "Reference to the Tree this connection belongs to. (Relationship: Tree 1:N Connection)"
-        },
         "bigId": {
           "type": "string",
-          "description": "Identifier of the 'big' in the connection. References a Person entity. (Relationship: Person 1:N Connection (as Big))"
+          "description": "Reference to Byte (the 'big' in the connection)."
         },
         "littleId": {
           "type": "string",
-          "description": "Identifier of the 'little' in the connection. References a Person entity. (Relationship: Person 1:N Connection (as Little))"
+          "description": "Reference to Byte (the 'little' in the connection)."
         },
-        "year": {
+        "yearOfPickup": {
           "type": "number",
-          "description": "The year the connection was made."
+          "description": "The year the connection was established."
         }
       },
       "required": [
         "id",
-        "treeId",
         "bigId",
         "littleId",
-        "year"
-      ]
-    },
-    "Person": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Person",
-      "type": "object",
-      "description": "Represents an individual in the tree.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Person entity."
-        },
-        "name": {
-          "type": "string",
-          "description": "The name of the person."
-        }
-      },
-      "required": [
-        "id",
-        "name"
+        "yearOfPickup"
       ]
     }
   },
   "auth": {
     "providers": [
       "password",
-      "anonymous",
-      "google.com"
+      "anonymous"
     ]
   },
   "firestore": {
@@ -96,11 +91,31 @@
           "schema": {
             "$ref": "#/backend/entities/Tree"
           },
-          "description": "Stores information about each Tree.  Each tree is uniquely identified by 'treeId'.",
+          "description": "Stores tree data. Includes denormalized fields (if any) to support Authorization Independence.",
           "params": [
             {
               "name": "treeId",
-              "description": "Unique identifier for the Tree."
+              "description": "The unique identifier for the tree."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/trees/{treeId}/bytes/{byteId}",
+        "definition": {
+          "entityName": "Byte",
+          "schema": {
+            "$ref": "#/backend/entities/Byte"
+          },
+          "description": "Stores byte data. Includes 'treeId' to enable list operations scoped to a specific tree. Includes denormalized fields (if any) to support Authorization Independence.",
+          "params": [
+            {
+              "name": "treeId",
+              "description": "The unique identifier for the parent tree."
+            },
+            {
+              "name": "byteId",
+              "description": "The unique identifier for the byte."
             }
           ]
         }
@@ -112,36 +127,20 @@
           "schema": {
             "$ref": "#/backend/entities/Connection"
           },
-          "description": "Stores connection data between individuals within a specific tree. Includes denormalized 'treeId' for authorization independence.",
+          "description": "Stores connection data between bytes within a tree. Includes denormalized 'treeId' to allow for atomic security rules. Includes 'bigId', 'littleId' and 'yearOfPickup'.",
           "params": [
             {
               "name": "treeId",
-              "description": "The ID of the tree that this connection belongs to."
+              "description": "The unique identifier for the parent tree."
             },
             {
               "name": "connectionId",
-              "description": "Unique identifier for the connection within the tree."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/persons/{personId}",
-        "definition": {
-          "entityName": "Person",
-          "schema": {
-            "$ref": "#/backend/entities/Person"
-          },
-          "description": "Stores data about each person.",
-          "params": [
-            {
-              "name": "personId",
-              "description": "The unique ID of the person."
+              "description": "The unique identifier for the connection."
             }
           ]
         }
       }
     ],
-    "reasoning": "The Firestore structure is designed to manage Trees, Connections, and Persons while ensuring data integrity and security. The primary goal is to enable straightforward security rules without complex hierarchical dependencies. We leverage path-based ownership for private user data and denormalization for collaborative data. Each Tree will have associated Connections, linking Persons within that tree. The structure is designed with 'Authorization Independence' in mind by not relying on parent document data to secure subcollections.\n\nTrees are stored at the top level. Connections are stored as subcollections of Trees to efficiently query connections for a specific tree. All connection documents will include a denormalized copy of the tree's members. Persons are stored as a top level entity, which can be accessed by any user. \n\nTo support the QAPs (Rules are not Filters), we ensure that listing operations can be secured using the structure. Path-based ownership of Trees ensures that listing trees is secure. Denormalizing the tree's members onto all connection documents allows for secure listing of connections associated with a given tree."
+    "reasoning": "The Firestore structure is designed to provide a secure and scalable solution for the TreeView application, focusing on clear authorization and data integrity. The design emphasizes Authorization Independence, eliminating the need for `get()` calls in security rules, which is crucial for atomic operations and debuggability. Structural Segregation ensures that collections have homogeneous security needs, simplifying rule creation.\n\nThe `trees` collection stores the basic information about each tree. Access control is not specified, but this can be expanded to include ownership or membership if required. The `bytes` subcollection under each tree stores individual byte data. Critically, each byte document includes the `treeId` to maintain a direct link to the parent tree for easy querying and to enable list operations scoped to a specific tree. The `connections` subcollection, nested under each tree, stores the connections between bytes within that tree. Each connection document includes `bigId`, `littleId`, and `yearOfPickup`. This structure allows for efficient querying of connections within a specific tree and direct enforcement of data integrity rules at the connection level, all while avoiding `get()` calls in security rules by denormalizing the `treeId` into the connection document.\n\nThis design facilitates simple, robust, and easily debuggable security rules because authorization checks can be performed directly on the requested document without needing to traverse the document hierarchy."
   }
 }
