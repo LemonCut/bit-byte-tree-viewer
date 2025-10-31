@@ -1,11 +1,12 @@
 import Image from 'next/image';
+import type { ComponentProps } from 'react';
 
-// Define the props for the new logo component, excluding 'src' and 'alt'
-// as they will be set internally. We'll allow other Image props to be passed.
-type ImageProps = Omit<React.ComponentProps<typeof Image>, 'src' | 'alt'>;
+// Explicitly define the props for the logo component.
+// This allows passing any standard Image prop except for 'src' and 'alt'.
+type TreeViewLogoProps = Omit<ComponentProps<typeof Image>, 'src' | 'alt'>;
 
-export function TreeViewLogo(props: ImageProps) {
-  // The src path is relative to the `public` directory.
+export function TreeViewLogo(props: TreeViewLogoProps) {
+  // The src path must be a root-relative path to the image in the `public` directory.
   return (
     <Image
       src="/images/logo.png"
