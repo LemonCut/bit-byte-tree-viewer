@@ -12,7 +12,7 @@ import {
   SidebarGroupLabel,
 } from '@/components/ui/sidebar';
 import { TreeViewLogo } from '@/components/icons';
-import { buildTree, getTrees, getBits, getAllPeople, getBytes, getUnassignedConnections } from '@/lib/data';
+import { buildTree, getTrees, getBits, getAllPeople, getBytes } from '@/lib/data';
 import { TreeSelector } from '@/components/tree-selector';
 import { ConnectionForm } from '@/components/connection-form';
 import { DataManagement } from '@/components/data-management';
@@ -26,7 +26,6 @@ import {
   CardTitle,
   CardDescription,
   CardContent,
-  CardFooter
 } from '@/components/ui/card';
 import type { Connection } from '@/lib/types';
 import { SearchDialog } from '@/components/search-dialog';
@@ -36,15 +35,7 @@ import { useFirestore } from '@/firebase';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AdminUnlock } from '@/components/admin-unlock';
 import { Button } from '@/components/ui/button';
-import { LogOut, Search, Share2, Link2, Users } from 'lucide-react';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
+import { LogOut, Search, Share2 } from 'lucide-react';
 
 
 export default function Home() {
@@ -63,8 +54,8 @@ export default function Home() {
   
   const treeParam = searchParams.get('tree');
 
-  const { allTrees, hasUnassigned } = useMemo(
-    () => (connections ? getTrees(connections) : { allTrees: [], hasUnassigned: false }),
+  const { allTrees } = useMemo(
+    () => (connections ? getTrees(connections) : { allTrees: [] }),
     [connections]
   );
   
@@ -83,10 +74,6 @@ export default function Home() {
     [connections]
   );
   
-  const unassignedConnections = useMemo(
-    () => (connections ? getUnassignedConnections(connections) : []),
-    [connections]
-  )
 
   const treeData = useMemo(
     () =>
@@ -95,9 +82,7 @@ export default function Home() {
   );
   
   let pageTitle = 'Welcome';
-  if (treeParam === '(None)') {
-    pageTitle = 'Unassigned Connections';
-  } else if (treeParam) {
+  if (treeParam) {
     pageTitle = `${treeParam} Tree`;
   }
 
@@ -128,7 +113,7 @@ export default function Home() {
               {loading ? (
                 <Skeleton className="h-10 w-full" />
               ) : (
-                <TreeSelector trees={allTrees} defaultTree={currentTreeName} hasUnassigned={hasUnassigned} />
+                <TreeSelector trees={allTrees} defaultTree={currentTreeName} />
               )}
             </SidebarGroup>
             <Separator />
@@ -164,7 +149,7 @@ export default function Home() {
           </header>
           <main className="flex-1 overflow-auto">
             <div className="p-4 md:p-6 lg:p-8 h-full overflow-auto">
-              <OrgChartWrapper loading={loading} connections={connections} treeData={treeData} currentTreeName={currentTreeName} treeParam={treeParam} unassignedConnections={unassignedConnections} />
+              <OrgChartWrapper loading={loading} connections={connections} treeData={treeData} currentTreeName={currentTreeName} treeParam={treeParam} />
             </div>
           </main>
         </div>
@@ -189,13 +174,13 @@ export default function Home() {
            {loading ? (
               <Skeleton className="h-10 w-[200px]" />
             ) : (
-              <TreeSelector trees={allTrees} defaultTree={currentTreeName} hasUnassigned={hasUnassigned} className="w-[200px] bg-background rounded-md shadow-md" />
+              <TreeSelector trees={allTrees} defaultTree={currentTreeName} className="w-[200px] bg-background rounded-md shadow-md" />
             )}
         </div>
         <main className="h-full overflow-auto">
           <div className="p-4 md:p-6 lg:p-8 h-full overflow-auto">
              <h2 className="text-2xl font-bold tracking-tight mb-4">{pageTitle}</h2>
-            <OrgChartWrapper loading={loading} connections={connections} treeData={treeData} currentTreeName={currentTreeName} treeParam={treeParam} unassignedConnections={unassignedConnections} />
+            <OrgChartWrapper loading={loading} connections={connections} treeData={treeData} currentTreeName={currentTreeName} treeParam={treeParam} />
           </div>
         </main>
         <AdminUnlock onUnlock={handleAdminToggle} />
@@ -204,7 +189,7 @@ export default function Home() {
   );
 }
 
-const OrgChartWrapper = ({ loading, connections, treeData, currentTreeName, treeParam, unassignedConnections }: { loading: boolean, connections: Connection[] | null, treeData: any[], currentTreeName: string, treeParam: string | null, unassignedConnections: Connection[] }) => {
+const OrgChartWrapper = ({ loading, connections, treeData, currentTreeName, treeParam }: { loading: boolean, connections: Connection[] | null, treeData: any[], currentTreeName: string, treeParam: string | null }) => {
   if (!treeParam && !loading) {
     return (
        <div className="flex items-center justify-center h-full">
@@ -236,49 +221,6 @@ const OrgChartWrapper = ({ loading, connections, treeData, currentTreeName, tree
     );
   }
   
-  if (treeParam === '(None)') {
-    if (unassignedConnections.length === 0) {
-       return (
-            <Card className="mt-4">
-                <CardHeader>
-                    <CardTitle>No Unassigned Connections</CardTitle>
-                    <CardDescription>
-                    All connections currently have a tree name assigned.
-                    </CardDescription>
-                </CardHeader>
-            </Card>
-       );
-    }
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Unassigned Connections</CardTitle>
-                <CardDescription>These connections do not have a tree name assigned. An admin can edit them to assign one.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                        <TableHead>Byte</TableHead>
-                        <TableHead>Bit</TableHead>
-                        <TableHead className="text-right">Year</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {unassignedConnections.map((conn) => (
-                            <TableRow key={conn.id}>
-                                <TableCell className="font-medium">{conn.byte}</TableCell>
-                                <TableCell>{conn.bit}</TableCell>
-                                <TableCell className="text-right">{conn.year}</TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            </CardContent>
-        </Card>
-    )
-  }
-
   if (connections && connections.length === 0) {
     return (
         <Card className="mt-4">
@@ -297,7 +239,7 @@ const OrgChartWrapper = ({ loading, connections, treeData, currentTreeName, tree
       {treeData.length > 0 && (
         <OrgChart data={treeData} currentTreeName={currentTreeName} />
       )}
-      {treeData.length === 0 && treeParam && treeParam !== '(None)' && (
+      {treeData.length === 0 && treeParam && (
         <Card className="mt-4">
           <CardHeader>
             <CardTitle>No Data in Tree</CardTitle>

@@ -3,7 +3,7 @@ import type { Connection, TreeNode, SearchResult } from '@/lib/types';
 // This file is now primarily for the data transformation logic.
 // The data itself will be managed in the component's state.
 
-export function getTrees(connections: Connection[]): { allTrees: string[], hasUnassigned: boolean } {
+export function getTrees(connections: Connection[]): { allTrees: string[] } {
   const treeNames = new Set<string>();
   let hasUnassigned = false;
   connections.forEach((c) => {
@@ -13,14 +13,15 @@ export function getTrees(connections: Connection[]): { allTrees: string[], hasUn
         hasUnassigned = true;
     }
   });
-  return {
-    allTrees: Array.from(treeNames).sort(),
-    hasUnassigned,
-  };
-}
 
-export function getUnassignedConnections(connections: Connection[]): Connection[] {
-    return connections.filter(c => !c.treeName);
+  const sortedTrees = Array.from(treeNames).sort();
+  if (hasUnassigned) {
+      sortedTrees.push('(None)');
+  }
+  
+  return {
+    allTrees: sortedTrees,
+  };
 }
 
 export function getAllPeople(connections: Connection[]): string[] {
@@ -59,9 +60,8 @@ export function buildTree(
   connections: Connection[],
   treeName: string
 ): TreeNode[] {
-  if (treeName === '(None)') return [];
   const relevantConnections = connections.filter(
-    (c) => c.treeName === treeName
+    (c) => (c.treeName || '(None)') === treeName
   );
   if (relevantConnections.length === 0) return [];
 
@@ -131,6 +131,7 @@ export function searchPeople(connections: Connection[], query: string): SearchRe
   connections.forEach(({ id, bit, byte, treeName, year }) => {
     const bitId = bit.replace(/\s+/g, '_');
     const byteId = byte.replace(/\s+/g, '_');
+    const currentTreeName = treeName || '(None)';
     
     // Check bit
     if (bit.toLowerCase().includes(lowerCaseQuery)) {
@@ -143,7 +144,7 @@ export function searchPeople(connections: Connection[], query: string): SearchRe
         });
       }
       people.get(bit)!.connections.push({
-        treeName: treeName,
+        treeName: currentTreeName,
         year: year,
         byte: byte,
         isRoot: false,
@@ -153,7 +154,7 @@ export function searchPeople(connections: Connection[], query: string): SearchRe
 
     // Check byte
     if (byte.toLowerCase().includes(lowerCaseQuery)) {
-      const isRoot = !connections.some(c => c.bit === byte && c.treeName === treeName);
+      const isRoot = !connections.some(c => c.bit === byte && (c.treeName || '(None)') === currentTreeName);
 
       if (!people.has(byte)) {
         people.set(byte, {
@@ -164,13 +165,13 @@ export function searchPeople(connections: Connection[], query: string): SearchRe
         });
       }
       
-      const existingConnection = people.get(byte)!.connections.find(c => c.treeName === treeName);
+      const existingConnection = people.get(byte)!.connections.find(c => c.treeName === currentTreeName);
       if (!existingConnection) {
          // Find if this byte is a bit in the same tree to avoid duplicate entries
-        const isAlsoBitInSameTree = connections.some(c => c.bit === byte && c.treeName === treeName);
+        const isAlsoBitInSameTree = connections.some(c => c.bit === byte && (c.treeName || '(None)') === currentTreeName);
         if (!isAlsoBitInSameTree) {
             people.get(byte)!.connections.push({
-                treeName: treeName,
+                treeName: currentTreeName,
                 isRoot: isRoot,
                 byte: null,
                 year: null,
