@@ -3,8 +3,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useFormState } from 'react-dom';
-import { useEffect } from 'react';
+import { useActionState, useEffect } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -48,7 +47,7 @@ export function ConnectionForm({ currentTree }: ConnectionFormProps) {
   const { toast } = useToast();
 
   const initialState = { message: null, errors: {} };
-  const [state, dispatch] = useFormState(addConnection, initialState);
+  const [state, dispatch] = useActionState(addConnection, initialState);
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
