@@ -65,62 +65,68 @@ export function buildTree(
   connections: Connection[],
   treeName: string
 ): TreeNode[] {
-  // Find the original tree name if the current tree is an AKA
   const treeAKAs = findTreeAKAs(connections);
   const originalName = Object.keys(treeAKAs).find(key => treeAKAs[key] === treeName);
 
-  const relevantConnections = connections.filter(
-    (c) => {
-      const currentConnectionTree = c.treeName || '(None)';
-      // Include connections from the current tree OR its original, AKA tree
-      return currentConnectionTree === treeName || currentConnectionTree === originalName;
-    }
-  );
-  
-  if (relevantConnections.length === 0) return [];
+  const treeNamesToBuild = [treeName];
+  if (originalName) {
+    treeNamesToBuild.push(originalName);
+  }
 
-  const nodes: { [key: string]: TreeNode } = {};
-  const bits = new Set<string>();
+  const allNodes: { [key: string]: TreeNode } = {};
 
-  // Initialize all nodes and track who is a bit
-  relevantConnections.forEach(({ byte, bit, year }) => {
-    const byteId = byte.replace(/\s+/g, '_');
-    const bitId = bit.replace(/\s+/g, '_');
-    
-    bits.add(byte); // Any 'byte' is a parent, so we use their name to check for roots later.
-    if (!nodes[byteId]) {
-      nodes[byteId] = { id: byteId, name: byte, children: [] };
-    }
-    if (!nodes[bitId]) {
-      // Assign the year to the bit when it's created
-      nodes[bitId] = { id: bitId, name: bit, year: year, children: [] };
-    } else if (!nodes[bitId].year) {
-      // If the bit node was already created (e.g. as a byte in another connection)
-      // assign the year. This takes the year from its first appearance as a 'bit'.
-      nodes[bitId].year = year;
-    }
-  });
+  // Helper function to process connections for a single tree
+  const processTreeConnections = (
+    treeConnections: Connection[],
+    currentTreeName: string
+  ) => {
+    const bitsInTree = new Set(treeConnections.map(c => c.bit));
 
-  // Populate children
-  relevantConnections.forEach(({ byte, bit }) => {
-    const byteId = byte.replace(/\s+/g, '_');
-    const bitId = bit.replace(/\s+/g, '_');
-    // Ensure parent exists before trying to push child
-    if (nodes[byteId] && nodes[bitId]) {
-       // Avoid adding duplicates
-      if (!nodes[byteId].children.some(child => child.id === nodes[bitId].id)) {
-        nodes[byteId].children.push(nodes[bitId]);
+    treeConnections.forEach(({ byte, bit, year }) => {
+      const byteId = byte.replace(/\s+/g, '_');
+      const bitId = bit.replace(/\s+/g, '_');
+
+      if (!allNodes[byteId]) {
+        allNodes[byteId] = { id: byteId, name: byte, children: [] };
       }
-    }
+      if (!allNodes[bitId]) {
+        allNodes[bitId] = { id: bitId, name: bit, year, children: [] };
+      } else if (allNodes[bitId].year === undefined) {
+        allNodes[bitId].year = year;
+      }
+      
+      // Link child to parent
+      if (!allNodes[byteId].children.some(child => child.id === bitId)) {
+        allNodes[byteId].children.push(allNodes[bitId]);
+      }
+      
+      // Identify and tag root of the *current* tree
+      if (!bitsInTree.has(byte)) {
+        allNodes[byteId].rootOfTreeName = currentTreeName;
+      }
+    });
+  };
+
+  // Process connections for each relevant tree
+  treeNamesToBuild.forEach(name => {
+    const relevantConnections = connections.filter(c => (c.treeName || '(None)') === name);
+    processTreeConnections(relevantConnections, name);
   });
-  
-  // Find root nodes (bytes who are never bits in THIS tree or the merged tree)
-  const bitsInThisTree = new Set(relevantConnections.map(c => c.bit));
-  const rootNodes = Object.values(nodes).filter(
-    (node) => !bitsInThisTree.has(node.name)
+
+  if (Object.keys(allNodes).length === 0) return [];
+
+  // Determine the final root nodes for the entire merged structure
+  const allBitsInMergedTree = new Set<string>();
+  treeNamesToBuild.forEach(name => {
+    connections.filter(c => (c.treeName || '(None)') === name)
+               .forEach(c => allBitsInMergedTree.add(c.bit));
+  });
+
+  const finalRootNodes = Object.values(allNodes).filter(
+    (node) => !allBitsInMergedTree.has(node.name)
   );
 
-  return rootNodes;
+  return finalRootNodes;
 }
 
 

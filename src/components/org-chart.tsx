@@ -15,7 +15,6 @@ interface OrgChartProps {
 // Function to convert our tree data into the format Google Charts expects
 function formatDataForGoogleChart(
   treeData: TreeNode[],
-  treeName: string
 ): (string | { v: string; f: string } | null)[][] {
   const chartData: (string | { v: string; f: string } | null)[][] = [
     ['Name', 'Parent', 'Tooltip'],
@@ -23,11 +22,9 @@ function formatDataForGoogleChart(
   const addedNodes = new Set<string>();
 
   function createTooltip(node: TreeNode): string {
-     return `${node.name}\nTree: ${treeName}${node.year ? `\nPickup Year: ${node.year}` : ''}`;
+     return `${node.name}${node.year ? `\nPickup Year: ${node.year}` : ''}`;
   }
   
-  const rootNodeIds = new Set(treeData.map(node => node.id));
-
   function traverse(nodes: TreeNode[], parent: string | null = null) {
     nodes.forEach((node) => {
       // Each node in the Google Org Chart must have a unique ID.
@@ -35,9 +32,9 @@ function formatDataForGoogleChart(
       const nodeId = node.id;
       let nodeName = node.name;
       
-      // If the node is a root node, append the tree name and "Root"
-      if (rootNodeIds.has(nodeId)) {
-        nodeName = `<div>${node.name} <span style="font-size:0.8em; color:grey;">(${treeName} Root)</span></div>`;
+      // If the node is a root of a specific tree, append the tree name
+      if (node.rootOfTreeName) {
+        nodeName = `<div>${node.name} <span style="font-size:0.8em; color:grey;">(${node.rootOfTreeName})</span></div>`;
       }
       
       const nodeParent = parent;
@@ -68,7 +65,7 @@ export function OrgChart({ data, currentTreeName }: OrgChartProps) {
 
   useEffect(() => {
     if (data && data.length > 0) {
-      setChartData(formatDataForGoogleChart(data, currentTreeName));
+      setChartData(formatDataForGoogleChart(data));
     } else {
       setChartData([]);
     }

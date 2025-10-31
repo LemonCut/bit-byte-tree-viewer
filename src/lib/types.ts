@@ -10,6 +10,7 @@ export interface TreeNode {
   id: string;
   name: string;
   year?: number; // Year is optional as root nodes might not have one
+  rootOfTreeName?: string; // Optional: name of the tree this node is a root of
   children: TreeNode[];
 }
 
