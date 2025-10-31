@@ -35,7 +35,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import type { Connection } from '@/lib/types';
 import { useFirestore } from '@/firebase';
-import { doc, updateDoc } from 'firebase/firestore';
+import { collection, doc, writeBatch, query, where, getDocs } from 'firebase/firestore';
 import { Pencil } from 'lucide-react';
 import { Separator } from './ui/separator';
 
@@ -45,6 +45,7 @@ const SearchSchema = z.object({
 
 const ModifySchema = z.object({
   id: z.string(),
+  newBitName: z.string().min(1, "Bit's name is required."),
   byte: z.string().min(1, "Byte's name is required."),
   treeName: z.string().min(1, 'Tree name is required.'),
   year: z.coerce
@@ -95,10 +96,13 @@ export function ModifyConnectionForm({
       });
       return;
     }
-
+    
+    modifyForm.reset();
     setSelectedBit(bitName);
     setBitConnections(foundConnections);
     setDialogOpen(true);
+    // Set the initial value for the new bit name field
+    modifyForm.setValue('newBitName', bitName);
   }
 
   async function onModify(data: z.infer<typeof ModifySchema>) {
@@ -110,21 +114,46 @@ export function ModifyConnectionForm({
       });
       return;
     }
+    
+    const oldBitName = selectedBit;
+    const { newBitName } = modifyForm.getValues();
+
+    if (!oldBitName) return;
 
     try {
-      const docRef = doc(firestore, 'connections', data.id);
-      await updateDoc(docRef, {
-        byte: data.byte,
-        treeName: data.treeName,
-        year: data.year,
-      });
+        const batch = writeBatch(firestore);
+        const connectionsRef = collection(firestore, 'connections');
+
+        // Update name where the person is a 'bit'
+        const bitQuery = query(connectionsRef, where('bit', '==', oldBitName));
+        const bitQuerySnapshot = await getDocs(bitQuery);
+        bitQuerySnapshot.forEach((doc) => {
+            batch.update(doc.ref, { bit: newBitName });
+        });
+
+        // Update name where the person is a 'byte'
+        const byteQuery = query(connectionsRef, where('byte', '==', oldBitName));
+        const byteQuerySnapshot = await getDocs(byteQuery);
+        byteQuerySnapshot.forEach((doc) => {
+            batch.update(doc.ref, { byte: newBitName });
+        });
+
+        // Update the specific connection from the form
+        const docRef = doc(firestore, 'connections', data.id);
+        batch.update(docRef, {
+            bit: newBitName, // ensure the bit name is updated here too
+            byte: data.byte,
+            treeName: data.treeName,
+            year: data.year,
+        });
+
+        await batch.commit();
 
       toast({
         title: 'Success!',
-        description: `Connection for '${selectedBit}' was updated successfully.`,
+        description: `Connection details for '${oldBitName}' updated to '${newBitName}' successfully.`,
       });
 
-      // Close dialog and refresh data locally (or rely on useCollection to do it)
       setDialogOpen(false);
       searchForm.reset();
 
@@ -133,7 +162,7 @@ export function ModifyConnectionForm({
       toast({
         variant: 'destructive',
         title: 'Uh oh! Something went wrong.',
-        description: 'There was a problem updating the connection.',
+        description: 'There was a problem updating the connections.',
       });
     }
   }
@@ -144,7 +173,7 @@ export function ModifyConnectionForm({
         <CardHeader className="p-0 mb-4">
           <CardTitle className="text-lg">Modify Connection</CardTitle>
           <CardDescription>
-            Find a Bit to edit their connection details.
+            Find a Bit to edit their name and connection details.
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0">
@@ -192,12 +221,33 @@ export function ModifyConnectionForm({
           <DialogHeader>
             <DialogTitle>Modify Connections for {selectedBit}</DialogTitle>
             <DialogDescription>
-              Edit the connection details below. Click save for each connection you change.
+              Edit the Bit's name, and their connection details below. Click save for each connection you change.
             </DialogDescription>
           </DialogHeader>
-          <ScrollArea className="max-h-[60vh]">
-            <div className="p-1">
-            {bitConnections.map((connection, index) => (
+           <Form {...modifyForm}>
+                <form className="space-y-4 pt-4">
+                    <FormField
+                      control={modifyForm.control}
+                      name="newBitName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Bit's New Name</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="Enter new name for the Bit"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                </form>
+            </Form>
+          <Separator />
+          <ScrollArea className="max-h-[50vh]">
+            <div className="p-1 space-y-4">
+            {bitConnections.map((connection) => (
               <div key={connection.id}>
                 <Form {...modifyForm}>
                   <form
@@ -216,6 +266,7 @@ export function ModifyConnectionForm({
                         </FormItem>
                       )}
                     />
+                    <p className="text-sm font-medium text-muted-foreground">Connection to <span className="text-foreground font-semibold">{connection.byte}</span> in <span className="text-foreground font-semibold">{connection.treeName}</span></p>
                     <FormField
                       control={modifyForm.control}
                       name="byte"
@@ -281,7 +332,6 @@ export function ModifyConnectionForm({
                     </Button>
                   </form>
                 </Form>
-                 {index < bitConnections.length - 1 && <Separator className="my-4" />}
                 </div>
             ))}
             </div>
