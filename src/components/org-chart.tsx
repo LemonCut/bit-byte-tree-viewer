@@ -50,7 +50,7 @@ function formatDataForGoogleChart(treeData: TreeNode[]): (string | { v: string; 
 
 
 export function OrgChart({ data, highlightedNode, onHighlightComplete }: OrgChartProps) {
-  const chartWrapperRef = useRef<GoogleChartWrapper>(null);
+  const chartWrapperRef = useRef<GoogleChartWrapper | null>(null);
   const [chartData, setChartData] = useState<(string | { v: string; f: string; } | null)[][]>([]);
 
   useEffect(() => {
