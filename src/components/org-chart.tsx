@@ -82,12 +82,9 @@ export function OrgChart({ data, highlightedNode, onHighlightComplete }: OrgChar
         
         if (rowIndex !== null) {
             (chart as any).setSelection([{ row: rowIndex, column: null }]);
-            
-            // Set a timer to remove the highlight
-            setTimeout(() => {
-                (chart as any).setSelection(null);
-                onHighlightComplete();
-            }, 3000); // Highlight for 3 seconds
+            // We call onHighlightComplete immediately to clear the state in the parent,
+            // but the selection in the chart remains.
+            onHighlightComplete();
         } else {
            onHighlightComplete(); // Node not found, complete highlight cycle
         }
