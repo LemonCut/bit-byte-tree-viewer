@@ -89,6 +89,7 @@ body {
 
 .google-chart-node {
   @apply bg-card text-card-foreground;
+  min-width: 200px;
 }
 
 .google-chart-node-selected {
