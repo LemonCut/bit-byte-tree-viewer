@@ -11,7 +11,7 @@
  * - /users/{userId}: User-specific data. Only the authenticated user can access their own data.
  * - /trees/{treeId}: Collection of trees.  Access is not explicitly restricted in this initial version.
  * - /trees/{treeId}/bytes/{byteId}: Subcollection of bytes associated with a specific tree.
- * - /trees/{treeId}/connections/{connectionId}: Subcollection of connections associated with a specific tree.
+ * - /connections/{connectionId}: Collection of all connections.
  * - /roles_admin/{userId}: Documents indicating admin roles. Existence implies admin privileges.
  *
  * Key Security Decisions:
@@ -103,16 +103,16 @@ service cloud.firestore {
 
     /**
      * @description Rules for connections subcollection.
-     * @path /trees/{treeId}/connections/{connectionId}
+     * @path /connections/{connectionId}
      * @allow (create) Any signed-in user can create a connection under a tree.
      * @deny (update) Non-admin users cannot update connections.
      * @principle Restricts write access to admins.
      */
-    match /trees/{treeId}/connections/{connectionId} {
+    match /connections/{connectionId} {
       allow get, list: if true;
-      allow create: if isAdmin();
-      allow update: if isAdmin() && resource != null;
-      allow delete: if isAdmin() && resource != null;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && resource != null;
+      allow delete: if isSignedIn() && resource != null;
     }
 
      /**
@@ -131,3 +131,5 @@ service cloud.firestore {
     }
   }
 }
+
+    
