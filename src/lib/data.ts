@@ -30,21 +30,29 @@ export function buildTree(
   const bits = new Set<string>();
 
   // Initialize all nodes and track who is a bit
-  relevantConnections.forEach(({ byte, bit }) => {
+  relevantConnections.forEach(({ byte, bit, year }) => {
     bits.add(bit);
     if (!nodes[byte]) {
       nodes[byte] = { id: byte, name: byte, children: [] };
     }
     if (!nodes[bit]) {
-      nodes[bit] = { id: bit, name: bit, children: [] };
+      // Assign the year to the bit when it's created
+      nodes[bit] = { id: bit, name: bit, year: year, children: [] };
+    } else if (!nodes[bit].year) {
+      // If the bit node was already created (e.g. as a byte in another connection)
+      // assign the year. This takes the year from its first appearance as a 'bit'.
+      nodes[bit].year = year;
     }
   });
 
   // Populate children
   relevantConnections.forEach(({ byte, bit }) => {
     // Ensure parent exists before trying to push child
-    if (nodes[byte]) {
-      nodes[byte].children.push(nodes[bit]);
+    if (nodes[byte] && nodes[bit]) {
+       // Avoid adding duplicates
+      if (!nodes[byte].children.some(child => child.id === nodes[bit].id)) {
+        nodes[byte].children.push(nodes[bit]);
+      }
     }
   });
 

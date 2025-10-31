@@ -8,5 +8,6 @@ export interface Connection {
 export interface TreeNode {
   id: string;
   name: string;
+  year?: number; // Year is optional as root nodes might not have one
   children: TreeNode[];
 }
