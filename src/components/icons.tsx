@@ -1,5 +1,4 @@
 import Image from 'next/image';
-import type { Omit } from 'react';
 
 // Define the props for the new logo component, excluding 'src' and 'alt'
 // as they will be set internally. We'll allow other Image props to be passed.
