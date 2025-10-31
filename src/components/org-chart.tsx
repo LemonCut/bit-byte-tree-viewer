@@ -4,7 +4,7 @@ import { Chart } from 'react-google-charts';
 import type { TreeNode } from '@/lib/types';
 import { useEffect, useState, useRef } from 'react';
 import { Button } from './ui/button';
-import { ZoomIn, ZoomOut, Download } from 'lucide-react';
+import { ZoomIn, ZoomOut } from 'lucide-react';
 import type { GoogleChartWrapper } from 'react-google-charts';
 
 interface OrgChartProps {
@@ -25,17 +25,26 @@ function formatDataForGoogleChart(
   function createTooltip(node: TreeNode): string {
      return `${node.name}\nTree: ${treeName}${node.year ? `\nPickup Year: ${node.year}` : ''}`;
   }
+  
+  const rootNodeIds = new Set(treeData.map(node => node.id));
 
   function traverse(nodes: TreeNode[], parent: string | null = null) {
     nodes.forEach((node) => {
       // Each node in the Google Org Chart must have a unique ID.
       // We use the sanitized `id` for the chart's internal value `v`, and the `name` for display `f`.
       const nodeId = node.id;
+      let nodeName = node.name;
+      
+      // If the node is a root node, append the tree name and "Root"
+      if (rootNodeIds.has(nodeId)) {
+        nodeName = `${node.name}<div style="color:red; font-style:italic">${treeName} Root</div>`;
+      }
+      
       const nodeParent = parent;
       const tooltip = createTooltip(node);
 
       if (!addedNodes.has(nodeId)) {
-        chartData.push([{ v: nodeId, f: node.name }, nodeParent, tooltip]);
+        chartData.push([{ v: nodeId, f: nodeName }, nodeParent, tooltip]);
         addedNodes.add(nodeId);
       }
 
