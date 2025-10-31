@@ -55,7 +55,7 @@ export function OrgChart({ data, currentTreeName }: OrgChartProps) {
     (string | { v: string; f: string } | null)[][]
   >([]);
   const [zoom, setZoom] = useState(1);
-  const chartRef = useRef<GoogleChartWrapper>(null);
+  const chartWrapperRef = useRef<GoogleChartWrapper | null>(null);
 
 
   useEffect(() => {
@@ -70,8 +70,8 @@ export function OrgChart({ data, currentTreeName }: OrgChartProps) {
   const handleZoomOut = () => setZoom((prev) => Math.max(0.2, prev - 0.1));
 
   const handleExport = () => {
-    if (chartRef.current) {
-      const chart = chartRef.current.getChart();
+    if (chartWrapperRef.current) {
+      const chart = chartWrapperRef.current.getChart();
       if (chart) {
         const imageURI = chart.getImageURI();
         const link = document.createElement('a');
@@ -111,7 +111,9 @@ export function OrgChart({ data, currentTreeName }: OrgChartProps) {
                 data={chartData}
                 width="100%"
                 height="400px"
-                ref={chartRef}
+                getChartWrapper={(chartWrapper) => {
+                  chartWrapperRef.current = chartWrapper;
+                }}
                 options={{
                     allowHtml: true,
                     nodeClass: 'google-chart-node',
