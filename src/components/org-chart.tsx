@@ -23,15 +23,14 @@ function formatDataForGoogleChart(treeData: TreeNode[]): (string | { v: string; 
   function traverse(nodes: TreeNode[], parent: string | null = null) {
     nodes.forEach((node) => {
       // Each node in the Google Org Chart must have a unique ID.
-      // We use the name, but if names can be duplicated across different
-      // branches, a more robust unique ID generation would be needed.
+      // We use the sanitized `id` for the chart's internal value `v`, and the `name` for display `f`.
       const nodeId = node.id;
       const nodeParent = parent;
       const tooltip = createTooltip(node);
       
       if (!addedNodes.has(nodeId)) {
          chartData.push([
-            { v: nodeId, f: node.name },
+            { v: nodeId, f: node.name }, // Use ID for `v` and Name for `f`
             nodeParent,
             tooltip,
         ]);
@@ -74,6 +73,7 @@ export function OrgChart({ data, highlightedNode, onHighlightComplete }: OrgChar
         const nodeIdToFind = highlightedNode;
         for (let i = 1; i < chartData.length; i++) { // Start from 1 to skip header
           const node = chartData[i][0];
+          // CRITICAL FIX: Compare against the `v` property (the sanitized ID)
           if (typeof node === 'object' && node !== null && node.v === nodeIdToFind) {
             rowIndex = i - 1; // Subtract 1 because dataTable rows are 0-indexed from data
             break;
