@@ -1,7 +1,7 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useMemo, useState, useEffect } from 'react';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import {
   Sidebar,
   SidebarContent,
@@ -40,6 +40,8 @@ import { LogOut, Search, Share2 } from 'lucide-react';
 
 export default function Home() {
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
   const firestore = useFirestore();
   
   const [isAdmin, setIsAdmin] = useState(false);
@@ -58,6 +60,16 @@ export default function Home() {
     () => (connections ? findTreeAKAs(connections) : {}),
     [connections]
   );
+
+  useEffect(() => {
+    if (treeParam && treeAKAs[treeParam]) {
+      const newTreeName = treeAKAs[treeParam];
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('tree', newTreeName);
+      router.replace(`${pathname}?${params.toString()}`);
+    }
+  }, [treeParam, treeAKAs, router, pathname, searchParams]);
+
 
   const { allTrees } = useMemo(
     () => (connections ? getTrees(connections, treeAKAs) : { allTrees: [] }),
@@ -270,5 +282,3 @@ const OrgChartWrapper = ({ loading, connections, treeData, currentTreeName, tree
     </div>
   )
 }
-
-    
