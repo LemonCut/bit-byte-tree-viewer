@@ -40,7 +40,8 @@ export function DataManagement({ connections }: DataManagementProps) {
       header: true,
       skipEmptyLines: true,
       complete: async (results) => {
-        const newConnections = results.data as Omit<Connection, 'id'>[];
+        const newConnections = results.data as any[];
+        
         if (newConnections.length === 0) {
           toast({
             variant: 'destructive',
@@ -53,19 +54,37 @@ export function DataManagement({ connections }: DataManagementProps) {
         try {
           const batch = writeBatch(firestore);
           const connectionsCollection = collection(firestore, 'connections');
+          let validConnectionsCount = 0;
+
           newConnections.forEach((conn) => {
-            // Ensure year is a number and required fields exist
+            // Validate required fields and convert year to a number
             const year = Number(conn.year);
             if (conn.byte && conn.bit && conn.treeName && !isNaN(year)) {
-               const docRef = doc(connectionsCollection); // Correctly create a new doc ref
-               batch.set(docRef, { ...conn, year });
+               const docRef = doc(connectionsCollection);
+               batch.set(docRef, { 
+                   byte: conn.byte,
+                   bit: conn.bit,
+                   treeName: conn.treeName,
+                   year: year 
+                });
+               validConnectionsCount++;
             }
           });
-          await batch.commit();
-          toast({
-            title: 'Success!',
-            description: `${newConnections.length} connections imported successfully.`,
-          });
+
+          if (validConnectionsCount > 0) {
+            await batch.commit();
+            toast({
+              title: 'Success!',
+              description: `${validConnectionsCount} connections imported successfully.`,
+            });
+          } else {
+             toast({
+                variant: 'destructive',
+                title: 'Import Failed',
+                description: 'No valid connections found in the CSV file to import.',
+            });
+          }
+
         } catch (error) {
           console.error('Error importing data: ', error);
           toast({
