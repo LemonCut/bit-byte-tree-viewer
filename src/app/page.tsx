@@ -54,14 +54,14 @@ export default function Home() {
   
   const treeParam = searchParams.get('tree');
 
-  const { allTrees } = useMemo(
-    () => (connections ? getTrees(connections) : { allTrees: [] }),
-    [connections]
-  );
-
   const treeAKAs = useMemo(
     () => (connections ? findTreeAKAs(connections) : {}),
     [connections]
+  );
+
+  const { allTrees } = useMemo(
+    () => (connections ? getTrees(connections, treeAKAs) : { allTrees: [] }),
+    [connections, treeAKAs]
   );
   
   const currentTreeName = treeParam || allTrees[0] || 'No Trees Found';
@@ -90,9 +90,10 @@ export default function Home() {
   let pageSubTitle = '';
   if (treeParam) {
     pageTitle = `${treeParam} Tree`;
-    const akaName = treeAKAs[treeParam];
-    if (akaName) {
-      pageSubTitle = `AKA ${akaName} Tree`;
+    // Find the original name (key) for the current new name (value)
+    const originalName = Object.keys(treeAKAs).find(key => treeAKAs[key] === treeParam);
+    if (originalName) {
+      pageSubTitle = `AKA ${originalName} Tree`;
     }
   }
 
@@ -269,5 +270,3 @@ const OrgChartWrapper = ({ loading, connections, treeData, currentTreeName, tree
     </div>
   )
 }
-
-    

@@ -3,13 +3,15 @@ import type { Connection, TreeNode, SearchResult, TreeAKA } from '@/lib/types';
 // This file is now primarily for the data transformation logic.
 // The data itself will be managed in the component's state.
 
-export function getTrees(connections: Connection[]): { allTrees: string[] } {
+export function getTrees(connections: Connection[], treeAKAs: TreeAKA = {}): { allTrees: string[] } {
   const treeNames = new Set<string>();
-  let hasUnassigned = false;
   connections.forEach((c) => {
     const treeName = c.treeName || '(None)';
     treeNames.add(treeName);
   });
+  
+  const oldTreeNames = Object.keys(treeAKAs);
+  oldTreeNames.forEach(oldName => treeNames.delete(oldName));
 
   const sortedTrees = Array.from(treeNames).sort();
   
