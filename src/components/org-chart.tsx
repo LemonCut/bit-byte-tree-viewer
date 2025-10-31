@@ -71,9 +71,9 @@ export function OrgChart({ data, currentTreeName }: OrgChartProps) {
 
   const handleExport = () => {
     if (chartWrapperRef.current) {
-      const chart = chartWrapperRef.current.getChart();
-      if (chart) {
-        const imageURI = chart.getImageURI();
+      const chartWrapper = chartWrapperRef.current;
+      const imageURI = chartWrapper.getImageURI();
+      if (imageURI) {
         const link = document.createElement('a');
         link.href = imageURI;
         link.download = `${currentTreeName}-tree.png`;
