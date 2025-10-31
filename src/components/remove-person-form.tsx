@@ -39,15 +39,15 @@ import { collection, query, where, getDocs, writeBatch } from 'firebase/firestor
 import { Trash2 } from 'lucide-react';
 
 const FormSchema = z.object({
-  personName: z.string().min(1, 'Person name is required.'),
+  personName: z.string().min(1, "Bit's name is required."),
 });
 
 type RemovePersonFormProps = {
-  allPeople: string[];
+  allBits: string[];
   connections: Connection[];
 };
 
-export function RemovePersonForm({ allPeople, connections }: RemovePersonFormProps) {
+export function RemovePersonForm({ allBits, connections }: RemovePersonFormProps) {
   const { toast } = useToast();
   const firestore = useFirestore();
   const [warningOpen, setWarningOpen] = useState(false);
@@ -140,8 +140,8 @@ export function RemovePersonForm({ allPeople, connections }: RemovePersonFormPro
     <>
       <Card className="bg-transparent border-none shadow-none">
         <CardHeader className="p-0 mb-4">
-          <CardTitle className="text-lg">Remove Person</CardTitle>
-          <CardDescription>Remove someone from all trees.</CardDescription>
+          <CardTitle className="text-lg">Remove Bit</CardTitle>
+          <CardDescription>Remove a Bit and all their connections from all trees.</CardDescription>
         </CardHeader>
         <CardContent className="p-0">
           <Form {...form}>
@@ -151,19 +151,19 @@ export function RemovePersonForm({ allPeople, connections }: RemovePersonFormPro
                 name="personName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Person's Name</FormLabel>
+                    <FormLabel>Bit's Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter name to remove" {...field} list="people-list" />
+                      <Input placeholder="Enter name to remove" {...field} list="bits-list" />
                     </FormControl>
-                    <datalist id="people-list">
-                      {allPeople.map(person => <option key={person} value={person} />)}
+                    <datalist id="bits-list">
+                      {allBits.map(person => <option key={person} value={person} />)}
                     </datalist>
                     <FormMessage />
                   </FormItem>
                 )}
               />
               <Button type="submit" variant="destructive" className="w-full" disabled={!firestore}>
-                <Trash2 className="mr-2 h-4 w-4" /> Remove Person
+                <Trash2 className="mr-2 h-4 w-4" /> Remove Bit
               </Button>
             </form>
           </Form>

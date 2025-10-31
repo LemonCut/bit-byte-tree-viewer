@@ -106,7 +106,7 @@ export default function Home() {
             </SidebarGroup>
             <Separator />
             <SidebarGroup>
-              <RemovePersonForm allPeople={allPeople} connections={connections || []} />
+              <RemovePersonForm allBits={allBits} connections={connections || []} />
             </SidebarGroup>
              <Separator />
             <SidebarGroup>
