@@ -2,9 +2,10 @@
 
 import { Chart } from 'react-google-charts';
 import type { TreeNode } from '@/lib/types';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Button } from './ui/button';
-import { ZoomIn, ZoomOut } from 'lucide-react';
+import { ZoomIn, ZoomOut, Download } from 'lucide-react';
+import type { GoogleChartWrapper } from 'react-google-charts';
 
 interface OrgChartProps {
   data: TreeNode[];
@@ -54,6 +55,8 @@ export function OrgChart({ data, currentTreeName }: OrgChartProps) {
     (string | { v: string; f: string } | null)[][]
   >([]);
   const [zoom, setZoom] = useState(1);
+  const chartRef = useRef<GoogleChartWrapper>(null);
+
 
   useEffect(() => {
     if (data && data.length > 0) {
@@ -66,13 +69,32 @@ export function OrgChart({ data, currentTreeName }: OrgChartProps) {
   const handleZoomIn = () => setZoom((prev) => prev + 0.1);
   const handleZoomOut = () => setZoom((prev) => Math.max(0.2, prev - 0.1));
 
+  const handleExport = () => {
+    if (chartRef.current) {
+      const chart = chartRef.current.getChart();
+      if (chart) {
+        const imageURI = chart.getImageURI();
+        const link = document.createElement('a');
+        link.href = imageURI;
+        link.download = `${currentTreeName}-tree.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    }
+  };
+
   if (!data || data.length === 0) {
     return null;
   }
 
   return (
     <div className="relative w-full h-full">
-        <div className="absolute bottom-4 right-4 z-10 flex gap-2">
+        <div className="absolute bottom-4 right-4 z-10 flex flex-col gap-2">
+            <Button variant="outline" size="icon" onClick={handleExport}>
+                <Download className="h-4 w-4" />
+                <span className="sr-only">Export as PNG</span>
+            </Button>
             <Button variant="outline" size="icon" onClick={handleZoomIn}>
                 <ZoomIn className="h-4 w-4" />
                 <span className="sr-only">Zoom In</span>
@@ -89,6 +111,7 @@ export function OrgChart({ data, currentTreeName }: OrgChartProps) {
                 data={chartData}
                 width="100%"
                 height="400px"
+                ref={chartRef}
                 options={{
                     allowHtml: true,
                     nodeClass: 'google-chart-node',
