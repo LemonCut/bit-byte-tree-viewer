@@ -2,98 +2,36 @@
  * @fileoverview Firestore Security Rules for the TreeView application.
  *
  * Core Philosophy:
- * This ruleset enforces a hierarchical data model where trees contain bytes and connections.
- * Authorization is based on the tree's context, with each byte and connection inheriting
- * the tree's security policies. The system is designed to be highly secure, restricting
- * write access and preventing unauthorized data modification. This initial prototyping phase assumes permissive data validation.
+ * This ruleset now operates on a flat 'connections' collection.
+ * Public read access is granted to allow all users to view the org charts.
+ * Write access (create, update, delete) is restricted to authenticated users to protect data integrity.
+ * This is a common pattern for public-facing data with restricted editing rights.
  *
  * Data Structure:
- * - /trees/{treeId}: Stores tree metadata.
- * - /trees/{treeId}/bytes/{byteId}: Stores byte data associated with a specific tree.
- * - /trees/{treeId}/connections/{connectionId}: Stores connection data between bytes within a tree.
+ * - /connections/{connectionId}: Stores all connection data for all trees.
  *
  * Key Security Decisions:
- * - No global admin roles are defined in this prototype.
- * - List operations on `/trees` are public.
- * - Write access to all collections is restricted to authenticated users.
+ * - Read access to the main `connections` collection is public.
+ * - Write access is restricted to authenticated users.
  * - Data validation is minimal in this prototyping phase, focusing on authorization.
- * - The rules explicitly deny any potentially dangerous or ambiguous operations.
- *
- * Denormalization for Authorization:
- * - The 'bytes' and 'connections' subcollections include a denormalized `treeId` field
- *   to allow security rules to efficiently verify that the byte or connection belongs
- *   to the correct tree without needing to perform additional `get()` operations.
- *
- * Structural Segregation:
- * - Data is segregated into collections based on its security needs (e.g., public trees, private bytes/connections).
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Allows read access to the trees collection for all users. Write access is restricted to authenticated users.
-     * @path /trees/{treeId}
-     * @allow get, list: if true;
-     * @allow create: if isSignedIn();
-     * @allow update: if isSignedIn();
-     * @allow delete: if isSignedIn();
-     * @deny get: if false;
-     * @deny list: if false;
-     * @deny create: if !isSignedIn();
-     * @deny update: if !isSignedIn();
-     * @deny delete: if !isSignedIn();
-     * @principle Allows anyone to read trees, authenticated users can create, update, and delete.
+     * @description Allows read access to the connections collection for all users. Write access is restricted to authenticated users.
+     * @path /connections/{connectionId}
+     * @allow read: if true;
+     * @allow write: if isSignedIn();
+     * @principle Allows anyone to read connection data, but only signed-in users can modify it.
      */
-    match /trees/{treeId} {
-      allow get, list: if true;
-      allow create: if isSignedIn();
-      allow update: if isSignedIn();
-      allow delete: if isSignedIn();
+    match /connections/{connectionId} {
+      allow read: if true;
+      allow write: if isSignedIn();
     }
 
-    /**
-     * @description Allows authenticated users to manage bytes within a specific tree.
-     * @path /trees/{treeId}/bytes/{byteId}
-     * @allow get, list: if isSignedIn();
-     * @allow create: if isSignedIn() && request.resource.data.treeId == treeId;
-     * @allow update: if isSignedIn() && resource.data.treeId == treeId;
-     * @allow delete: if isSignedIn() && resource.data.treeId == treeId;
-     * @deny get: if !isSignedIn();
-     * @deny list: if !isSignedIn();
-     * @deny create: if !isSignedIn() || request.resource.data.treeId != treeId;
-     * @deny update: if !isSignedIn() || resource.data.treeId != treeId;
-     * @deny delete: if !isSignedIn() || resource.data.treeId != treeId;
-     * @principle Enforces tree-scoped ownership for bytes, ensuring data consistency.
-     */
-    match /trees/{treeId}/bytes/{byteId} {
-      allow get, list: if isSignedIn();
-      allow create: if isSignedIn() && request.resource.data.treeId == treeId;
-      allow update: if isSignedIn() && resource.data.treeId == treeId;
-      allow delete: if isSignedIn() && resource.data.treeId == treeId;
-    }
-
-    /**
-     * @description Allows authenticated users to manage connections within a specific tree.
-     * @path /trees/{treeId}/connections/{connectionId}
-     * @allow get, list: if isSignedIn();
-     * @allow create: if isSignedIn() && request.resource.data.treeId == treeId;
-     * @allow update: if isSignedIn() && resource.data.treeId == treeId;
-     * @allow delete: if isSignedIn() && resource.data.treeId == treeId;
-     * @deny get: if !isSignedIn();
-     * @deny list: if !isSignedIn();
-     * @deny create: if !isSignedIn() || request.resource.data.treeId != treeId;
-     * @deny update: if !isSignedIn() || resource.data.treeId != treeId;
-     * @deny delete: if !isSignedIn() || resource.data.treeId != treeId;
-     * @principle Enforces tree-scoped ownership for connections, ensuring data consistency.
-     */
-    match /trees/{treeId}/connections/{connectionId} {
-      allow get, list: if isSignedIn();
-      allow create: if isSignedIn() && request.resource.data.treeId == treeId;
-      allow update: if isSignedIn() && resource.data.treeId == treeId;
-      allow delete: if isSignedIn() && resource.data.treeId == treeId;
-    }
-
+    // Helper function to check for authentication.
     function isSignedIn() {
       return request.auth != null;
     }
