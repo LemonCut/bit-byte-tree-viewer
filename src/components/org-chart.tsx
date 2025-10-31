@@ -30,7 +30,7 @@ function formatDataForGoogleChart(treeData: TreeNode[]): (string | { v: string; 
       
       if (!addedNodes.has(nodeId)) {
          chartData.push([
-            { v: nodeId, f: node.name }, // CRITICAL FIX: Use the sanitized 'id' for 'v'
+            { v: nodeId, f: node.name },
             nodeParent,
             tooltip,
         ]);
@@ -107,7 +107,9 @@ export function OrgChart({ data, highlightedNode, onHighlightComplete }: OrgChar
         width="100%"
         height="400px"
         getChartWrapper={wrapper => {
-          chartWrapperRef.current = wrapper;
+          if (wrapper) {
+            (chartWrapperRef as React.MutableRefObject<GoogleChartWrapper | null>).current = wrapper;
+          }
         }}
         options={{
           allowHtml: true,
