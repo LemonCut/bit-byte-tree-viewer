@@ -81,10 +81,7 @@ service cloud.firestore {
      * @principle Allows public read access but restricts write access to admins.
      */
     match /trees/{treeId} {
-      allow get, list: if true;
-      allow create: if isAdmin();
-      allow update: if isAdmin() && resource != null;
-      allow delete: if isAdmin() && resource != null;
+      allow read, write: if true;
     }
 
     /**
@@ -95,10 +92,7 @@ service cloud.firestore {
      * @principle Restricts write access to admins.
      */
     match /trees/{treeId}/bytes/{byteId} {
-      allow get, list: if true;
-      allow create: if isAdmin();
-      allow update: if isAdmin() && resource != null;
-      allow delete: if isAdmin() && resource != null;
+      allow read, write: if true;
     }
 
     /**
@@ -109,8 +103,7 @@ service cloud.firestore {
      * @principle Restricts write access to admins.
      */
     match /connections/{document=**} {
-      allow get, list: if true;
-      allow create, update, delete: if isSignedIn();
+      allow read, write: if true;
     }
 
      /**
