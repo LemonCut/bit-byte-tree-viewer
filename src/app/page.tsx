@@ -13,7 +13,7 @@ import {
   SidebarGroupLabel,
 } from '@/components/ui/sidebar';
 import { TreeViewLogo } from '@/components/icons';
-import { buildTree, getTrees } from '@/lib/data';
+import { buildTree, getTrees, getBits } from '@/lib/data';
 import { TreeSelector } from '@/components/tree-selector';
 import { ConnectionForm } from '@/components/connection-form';
 import { OrgChart } from '@/components/org-chart';
@@ -31,6 +31,7 @@ export default function Home() {
 
   const allTrees = useMemo(() => getTrees(connections), [connections]);
   const currentTreeName = searchParams.get('tree') || allTrees[0] || 'No Trees Found';
+  const allBits = useMemo(() => getBits(connections), [connections]);
   
   const treeData = useMemo(() => buildTree(connections, currentTreeName), [connections, currentTreeName]);
 
@@ -62,7 +63,12 @@ export default function Home() {
           </SidebarGroup>
           <Separator />
           <SidebarGroup>
-            <ConnectionForm currentTree={currentTreeName} onAddConnection={handleAddConnection} />
+            <ConnectionForm 
+              currentTree={currentTreeName} 
+              onAddConnection={handleAddConnection}
+              allBits={allBits}
+              connections={connections}
+            />
           </SidebarGroup>
         </SidebarContent>
       </Sidebar>

@@ -8,7 +8,7 @@ export function getTrees(connections: Connection[]): string[] {
   return Array.from(treeNames);
 }
 
-export function getPeople(connections: Connection[]): string[] {
+export function getAllPeople(connections: Connection[]): string[] {
   const people = new Set<string>();
   connections.forEach((c) => {
     people.add(c.byte);
@@ -16,6 +16,20 @@ export function getPeople(connections: Connection[]): string[] {
   });
   return Array.from(people).sort();
 }
+
+export function getBits(connections: Connection[]): string[] {
+  const bits = new Set<string>();
+  connections.forEach((c) => {
+    bits.add(c.bit);
+  });
+  return Array.from(bits).sort();
+}
+
+export function findBitInOtherTrees(connections: Connection[], bitName: string, currentTree: string): string | null {
+  const connection = connections.find(c => c.bit === bitName && c.treeName !== currentTree);
+  return connection ? connection.treeName : null;
+}
+
 
 export function buildTree(
   connections: Connection[],
