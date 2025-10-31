@@ -36,6 +36,8 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import type { Connection } from '@/lib/types';
 import { findBitInOtherTrees } from '@/lib/data';
+import { useFirestore } from '@/firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 const FormSchema = z.object({
   byte: z.string().min(1, 'Byte name is required.'),
@@ -52,14 +54,14 @@ const FormSchema = z.object({
 
 type ConnectionFormProps = {
   currentTree: string;
-  onAddConnection: (connection: Connection) => void;
   allBits: string[];
   connections: Connection[];
   allTrees: string[];
 };
 
-export function ConnectionForm({ currentTree, onAddConnection, allBits, connections, allTrees }: ConnectionFormProps) {
+export function ConnectionForm({ currentTree, allBits, connections, allTrees }: ConnectionFormProps) {
   const { toast } = useToast();
+  const firestore = useFirestore();
   const [warningOpen, setWarningOpen] = useState(false);
   const [treeNameWarningOpen, setTreeNameWarningOpen] = useState(false);
   const [pendingData, setPendingData] = useState<z.infer<typeof FormSchema> | null>(null);
@@ -75,21 +77,41 @@ export function ConnectionForm({ currentTree, onAddConnection, allBits, connecti
     },
   });
   
-  const proceedWithSubmit = (data: z.infer<typeof FormSchema>) => {
+  const proceedWithSubmit = async (data: z.infer<typeof FormSchema>) => {
+    if (!firestore) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Database connection not found.',
+      });
+      return;
+    }
     const finalTreeName = data.treeName || currentTree || 'Default Tree';
-    const newConnection = { ...data, treeName: finalTreeName };
-    onAddConnection(newConnection);
-    toast({
-        title: 'Success!',
-        description: 'Connection added successfully.',
-    });
-    form.reset();
-    form.setValue('year', new Date().getFullYear());
-    setPendingData(null);
+    const newConnection = { ...data, treeName: finalTreeName, createdAt: serverTimestamp() };
+    
+    try {
+      await addDoc(collection(firestore, 'connections'), newConnection);
+      toast({
+          title: 'Success!',
+          description: 'Connection added successfully.',
+      });
+      form.reset();
+      form.setValue('year', new Date().getFullYear());
+    } catch (error) {
+      console.error("Error adding document: ", error);
+      toast({
+        variant: 'destructive',
+        title: 'Uh oh! Something went wrong.',
+        description: 'There was a problem saving the connection.',
+      });
+    } finally {
+      setPendingData(null);
+    }
   }
 
   function onSubmit(data: z.infer<typeof FormSchema>) {
-    if (data.treeName && data.treeName.toLowerCase().endsWith('tree')) {
+    // If tree name ends with tree (case-insensitive) but is not just "Tree"
+    if (data.treeName.toLowerCase().endsWith('tree') && data.treeName.length > 4) {
         setPendingData(data);
         setTreeNameWarningOpen(true);
         return;
@@ -218,7 +240,7 @@ export function ConnectionForm({ currentTree, onAddConnection, allBits, connecti
                 )}
               />
               
-              <Button type="submit" className="w-full">
+              <Button type="submit" className="w-full" disabled={!firestore}>
                 Add Connection
               </Button>
             </form>
@@ -246,9 +268,7 @@ export function ConnectionForm({ currentTree, onAddConnection, allBits, connecti
           <AlertDialogHeader>
             <AlertDialogTitle>Tree Name Warning</AlertDialogTitle>
             <AlertDialogDescription>
-              The tree name you entered, '{pendingData?.treeName}', already ends with "Tree".
-              The resulting tree will be named '{pendingData?.treeName} Tree'.
-              Are you sure you want to proceed?
+              The tree name you entered, '{pendingData?.treeName}', seems to end with "Tree". This might be redundant. Are you sure you want to proceed?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

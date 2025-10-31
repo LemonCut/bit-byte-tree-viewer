@@ -1,0 +1,39 @@
+{
+  "entities": {
+    "Connection": {
+      "title": "Connection",
+      "description": "Represents a relationship between a byte and a bit in a specific tree and year.",
+      "type": "object",
+      "properties": {
+        "byte": {
+          "type": "string",
+          "description": "The name of the byte (the parent/mentor)."
+        },
+        "bit": {
+          "type": "string",
+          "description": "The name of the bit (the child/mentee)."
+        },
+        "treeName": {
+          "type": "string",
+          "description": "The name of the tree this connection belongs to."
+        },
+        "year": {
+          "type": "number",
+          "description": "The year the connection (pickup) was made."
+        }
+      },
+      "required": ["byte", "bit", "treeName", "year"]
+    }
+  },
+  "auth": {
+    "providers": []
+  },
+  "firestore": {
+    "/connections/{connectionId}": {
+      "schema": {
+        "$ref": "#/entities/Connection"
+      },
+      "description": "Stores all the bit/byte connections for all trees."
+    }
+  }
+}

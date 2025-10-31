@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
   Sidebar,
@@ -10,7 +10,6 @@ import {
   SidebarProvider,
   SidebarTrigger,
   SidebarGroupLabel,
-  SidebarInset,
 } from '@/components/ui/sidebar';
 import { TreeViewLogo } from '@/components/icons';
 import { buildTree, getTrees, getBits } from '@/lib/data';
@@ -25,38 +24,42 @@ import {
   CardDescription,
 } from '@/components/ui/card';
 import type { Connection } from '@/lib/types';
-import { CsvImporter } from '@/components/csv-importer';
 import { SearchDialog } from '@/components/search-dialog';
-
-// Initial empty state for connections
-const initialConnections: Connection[] = [];
+import { useCollection } from '@/firebase';
+import { collection } from 'firebase/firestore';
+import { useFirestore } from '@/firebase';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function Home() {
   const searchParams = useSearchParams();
-  const [connections, setConnections] =
-    useState<Connection[]>(initialConnections);
+  const firestore = useFirestore();
 
-  const allTrees = useMemo(() => getTrees(connections), [connections]);
+  const connectionsQuery = useMemo(
+    () => (firestore ? collection(firestore, 'connections') : null),
+    [firestore]
+  );
+  const { data: connections, loading } = useCollection<Connection>(connectionsQuery);
+
+  const allTrees = useMemo(
+    () => (connections ? getTrees(connections) : []),
+    [connections]
+  );
   const currentTreeName =
     searchParams.get('tree') || allTrees[0] || 'No Trees Found';
-  const allBits = useMemo(() => getBits(connections), [connections]);
+  const allBits = useMemo(
+    () => (connections ? getBits(connections) : []),
+    [connections]
+  );
 
   const treeData = useMemo(
-    () => buildTree(connections, currentTreeName),
+    () =>
+      connections ? buildTree(connections, currentTreeName) : [],
     [connections, currentTreeName]
   );
 
-  const handleAddConnection = (newConnection: Connection) => {
-    setConnections((prev) => [...prev, newConnection]);
-  };
-
-  const handleDataLoaded = (data: Connection[]) => {
-    setConnections(data);
-  };
-
   const pageTitle =
     currentTreeName === 'No Trees Found'
-      ? currentTreeName
+      ? 'No Data'
       : `${currentTreeName} Tree`;
 
   return (
@@ -71,19 +74,18 @@ export default function Home() {
         <SidebarContent>
           <SidebarGroup>
             <SidebarGroupLabel>Select Tree</SidebarGroupLabel>
-            <TreeSelector trees={allTrees} defaultTree={currentTreeName} />
-          </SidebarGroup>
-          <Separator />
-          <SidebarGroup>
-            <CsvImporter onDataLoaded={handleDataLoaded} />
+            {loading ? (
+              <Skeleton className="h-10 w-full" />
+            ) : (
+              <TreeSelector trees={allTrees} defaultTree={currentTreeName} />
+            )}
           </SidebarGroup>
           <Separator />
           <SidebarGroup>
             <ConnectionForm
               currentTree={currentTreeName}
-              onAddConnection={handleAddConnection}
               allBits={allBits}
-              connections={connections}
+              connections={connections || []}
               allTrees={allTrees}
             />
           </SidebarGroup>
@@ -95,27 +97,37 @@ export default function Home() {
             <SidebarTrigger className="md:hidden" />
             <h2 className="text-2xl font-bold tracking-tight">{pageTitle}</h2>
           </div>
-          <SearchDialog connections={connections} />
+          <SearchDialog connections={connections || []} />
         </header>
         <main className="flex-1 overflow-auto">
           <div className="p-4 md:p-6 lg:p-8 h-full overflow-auto">
-            {connections.length === 0 && (
-              <Card className="mt-4">
+            {loading && (
+               <Card className="mt-4">
                 <CardHeader>
-                  <CardTitle>No Data Loaded</CardTitle>
+                  <CardTitle>Loading Data...</CardTitle>
                   <CardDescription>
-                    Upload a CSV file or add a connection to get started.
+                    Please wait while the connections are being loaded.
                   </CardDescription>
                 </CardHeader>
               </Card>
             )}
-            {connections.length > 0 && treeData.length > 0 && (
-              <OrgChart data={treeData} />
-            )}
-            {connections.length > 0 && treeData.length === 0 && (
+            {!loading && connections && connections.length === 0 && (
               <Card className="mt-4">
                 <CardHeader>
-                  <CardTitle>No Data</CardTitle>
+                  <CardTitle>No Data Found</CardTitle>
+                  <CardDescription>
+                    Your database is empty. Add a connection to get started.
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+            )}
+            {!loading && connections && connections.length > 0 && treeData.length > 0 && (
+              <OrgChart data={treeData} />
+            )}
+            {!loading && connections && connections.length > 0 && treeData.length === 0 && (
+              <Card className="mt-4">
+                <CardHeader>
+                  <CardTitle>No Data in Tree</CardTitle>
                   <CardDescription>
                     No connections found for the '{currentTreeName}' tree. Try
                     selecting another tree or adding a new connection.
