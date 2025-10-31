@@ -81,7 +81,7 @@ export default function Home() {
         <Sidebar>
           <SidebarHeader>
             <div className="flex items-center gap-2 p-2">
-              <TreeViewLogo className="w-8 h-8 text-primary" />
+              <TreeViewLogo className="w-8 h-8" />
               <h1 className="text-2xl font-bold">TreeView</h1>
             </div>
             <p className="text-xs text-center text-muted-foreground">Admin Mode</p>
@@ -140,7 +140,7 @@ export default function Home() {
     <div className="flex flex-col h-screen">
       <header className="flex items-center justify-between p-4 border-b sticky top-0 bg-background/80 backdrop-blur-sm z-20 h-16 shrink-0">
         <div className="flex items-center gap-2">
-          <TreeViewLogo className="w-8 h-8 text-primary" />
+          <TreeViewLogo className="w-8 h-8" />
           <h1 className="text-2xl font-bold">TreeView</h1>
         </div>
         <div className="flex items-center gap-2">
