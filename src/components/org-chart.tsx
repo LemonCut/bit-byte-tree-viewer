@@ -6,11 +6,13 @@ import { useEffect, useState } from 'react';
 
 interface OrgChartProps {
   data: TreeNode[];
+  currentTreeName: string;
 }
 
 // Function to convert our tree data into the format Google Charts expects
 function formatDataForGoogleChart(
-  treeData: TreeNode[]
+  treeData: TreeNode[],
+  treeName: string
 ): (string | { v: string; f: string } | null)[][] {
   const chartData: (string | { v: string; f: string } | null)[][] = [
     ['Name', 'Parent', 'Tooltip'],
@@ -18,7 +20,7 @@ function formatDataForGoogleChart(
   const addedNodes = new Set<string>();
 
   function createTooltip(node: TreeNode): string {
-    return `${node.name}${node.year ? `\nPickup Year: ${node.year}` : ''}`;
+     return `${node.name}\nTree: ${treeName}${node.year ? `\nPickup Year: ${node.year}` : ''}`;
   }
 
   function traverse(nodes: TreeNode[], parent: string | null = null) {
@@ -45,18 +47,18 @@ function formatDataForGoogleChart(
   return chartData;
 }
 
-export function OrgChart({ data }: OrgChartProps) {
+export function OrgChart({ data, currentTreeName }: OrgChartProps) {
   const [chartData, setChartData] = useState<
     (string | { v: string; f: string } | null)[][]
   >([]);
 
   useEffect(() => {
     if (data && data.length > 0) {
-      setChartData(formatDataForGoogleChart(data));
+      setChartData(formatDataForGoogleChart(data, currentTreeName));
     } else {
       setChartData([]);
     }
-  }, [data]);
+  }, [data, currentTreeName]);
 
   if (!data || data.length === 0) {
     return null;

@@ -190,7 +190,7 @@ const OrgChartWrapper = ({ loading, connections, treeData, currentTreeName }: { 
         </Card>
       )}
       {!loading && connections && connections.length > 0 && treeData.length > 0 && (
-        <OrgChart data={treeData} />
+        <OrgChart data={treeData} currentTreeName={currentTreeName} />
       )}
       {!loading && connections && connections.length > 0 && treeData.length === 0 && (
         <Card className="mt-4">

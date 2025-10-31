@@ -93,6 +93,19 @@ export function buildTree(
   return rootNodes;
 }
 
+
+function generateTooltip(person: SearchResult): string {
+    const name = person.name;
+    const treeInfo = person.connections.map(conn => {
+        if (conn.isRoot) {
+            return `${conn.treeName} (Root)`;
+        }
+        return `${conn.treeName} (${conn.year} - ${conn.byte}'s Bit)`;
+    }).join('\n');
+    return `${name}\nTree(s):\n${treeInfo}`;
+}
+
+
 export function searchPeople(connections: Connection[], query: string): SearchResult[] {
   if (!query) return [];
 
@@ -110,6 +123,7 @@ export function searchPeople(connections: Connection[], query: string): SearchRe
           name: bit,
           id: bitId,
           connections: [],
+          tooltip: ''
         });
       }
       people.get(bit)!.connections.push({
@@ -130,6 +144,7 @@ export function searchPeople(connections: Connection[], query: string): SearchRe
           name: byte,
           id: byteId,
           connections: [],
+          tooltip: ''
         });
       }
       
@@ -156,5 +171,12 @@ export function searchPeople(connections: Connection[], query: string): SearchRe
     }
   });
 
-  return Array.from(people.values()).sort((a, b) => a.name.localeCompare(b.name));
+  const results = Array.from(people.values()).sort((a, b) => a.name.localeCompare(b.name));
+  
+  // Generate tooltip after all connections are gathered
+  results.forEach(person => {
+      person.tooltip = generateTooltip(person);
+  });
+  
+  return results;
 }

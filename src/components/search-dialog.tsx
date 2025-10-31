@@ -16,6 +16,12 @@ import { Input } from '@/components/ui/input';
 import { searchPeople } from '@/lib/data';
 import type { Connection, SearchResult } from '@/lib/types';
 import { Separator } from './ui/separator';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface SearchDialogProps {
   connections: Connection[];
@@ -70,29 +76,38 @@ export function SearchDialog({ connections }: SearchDialogProps) {
         </div>
         {searchResults.length > 0 && (
           <div className="max-h-96 overflow-y-auto">
-            <ul className="space-y-4">
-              {searchResults.map((person) => (
-                <li key={person.name}>
-                  <h3 className="font-bold">{person.name}</h3>
-                  <ul className="pl-4 space-y-1 mt-1">
-                    {person.connections.map((conn, index) => (
-                      <li key={`${conn.treeName}-${index}`} className="text-sm text-muted-foreground">
-                        <Link 
-                          href={`/?tree=${encodeURIComponent(conn.treeName)}`}
-                          onClick={() => handleOpenChange(false)}
-                          className="hover:underline hover:text-primary"
-                        >
-                            {conn.isRoot
-                            ? `${conn.treeName} Tree - Root Byte`
-                            : `${conn.treeName} Tree - ${conn.year} - ${conn.byte}'s Bit`}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                  <Separator className="mt-4"/>
-                </li>
-              ))}
-            </ul>
+            <TooltipProvider>
+              <ul className="space-y-4">
+                {searchResults.map((person) => (
+                  <li key={person.name}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <h3 className="font-bold cursor-help">{person.name}</h3>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" align="start">
+                        <pre className="text-xs">{person.tooltip}</pre>
+                      </TooltipContent>
+                    </Tooltip>
+                    <ul className="pl-4 space-y-1 mt-1">
+                      {person.connections.map((conn, index) => (
+                        <li key={`${conn.treeName}-${index}`} className="text-sm text-muted-foreground">
+                          <Link 
+                            href={`/?tree=${encodeURIComponent(conn.treeName)}`}
+                            onClick={() => handleOpenChange(false)}
+                            className="hover:underline hover:text-primary"
+                          >
+                              {conn.isRoot
+                              ? `${conn.treeName} Tree - Root Byte`
+                              : `${conn.treeName} Tree - ${conn.year} - ${conn.byte}'s Bit`}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                    <Separator className="mt-4"/>
+                  </li>
+                ))}
+              </ul>
+            </TooltipProvider>
           </div>
         )}
          {searchQuery && searchResults.length === 0 && (

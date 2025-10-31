@@ -16,6 +16,7 @@ export interface TreeNode {
 export interface SearchResult {
   id: string;
   name: string;
+  tooltip: string;
   connections: {
     id: string;
     treeName: string;
