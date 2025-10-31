@@ -7,7 +7,6 @@ import {
   SidebarContent,
   SidebarHeader,
   SidebarGroup,
-  SidebarInset,
   SidebarProvider,
   SidebarTrigger,
   SidebarGroupLabel,
@@ -88,16 +87,15 @@ export default function Home() {
           </SidebarGroup>
         </SidebarContent>
       </Sidebar>
-      <div className="flex flex-col flex-1">
-        <header className="flex items-center justify-between p-4 border-b sticky top-0 bg-background/80 backdrop-blur-sm z-10 h-16">
+      <div className="flex flex-col flex-1 min-w-0">
+        <header className="flex items-center justify-between p-4 border-b sticky top-0 bg-background/80 backdrop-blur-sm z-10 h-16 shrink-0">
           <div className="flex items-center gap-4">
             <SidebarTrigger className="md:hidden" />
             <h2 className="text-2xl font-bold tracking-tight">{pageTitle}</h2>
           </div>
           <SearchDialog connections={connections} />
         </header>
-        <SidebarInset>
-          <main className="p-4 md:p-6 lg:p-8">
+        <main className="p-4 md:p-6 lg:p-8 flex-1 overflow-auto">
             {connections.length === 0 && (
               <Card className="mt-4">
                 <CardHeader>
@@ -122,8 +120,7 @@ export default function Home() {
                 </CardHeader>
               </Card>
             )}
-          </main>
-        </SidebarInset>
+        </main>
       </div>
     </SidebarProvider>
   );
