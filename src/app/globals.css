@@ -86,3 +86,11 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+.google-chart-node {
+  @apply bg-card text-card-foreground;
+}
+
+.google-chart-node-selected {
+  @apply bg-primary text-primary-foreground;
+}

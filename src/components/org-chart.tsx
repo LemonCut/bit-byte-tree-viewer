@@ -87,7 +87,7 @@ export function OrgChart({ data, highlightedNode, onHighlightComplete }: OrgChar
             setTimeout(() => {
                 (chart as any).setSelection(null);
                 onHighlightComplete();
-            }, 1500); // Highlight for 1.5 seconds
+            }, 3000); // Highlight for 3 seconds
         } else {
            onHighlightComplete(); // Node not found, complete highlight cycle
         }
@@ -111,8 +111,8 @@ export function OrgChart({ data, highlightedNode, onHighlightComplete }: OrgChar
         }}
         options={{
           allowHtml: true,
-          nodeClass: 'bg-card text-card-foreground',
-          selectedNodeClass: 'bg-primary text-primary-foreground',
+          nodeClass: 'google-chart-node',
+          selectedNodeClass: 'google-chart-node-selected',        
         }}
       />
     </div>
