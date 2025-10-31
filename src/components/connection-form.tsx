@@ -55,11 +55,13 @@ type ConnectionFormProps = {
   onAddConnection: (connection: Connection) => void;
   allBits: string[];
   connections: Connection[];
+  allTrees: string[];
 };
 
-export function ConnectionForm({ currentTree, onAddConnection, allBits, connections }: ConnectionFormProps) {
+export function ConnectionForm({ currentTree, onAddConnection, allBits, connections, allTrees }: ConnectionFormProps) {
   const { toast } = useToast();
   const [warningOpen, setWarningOpen] = useState(false);
+  const [treeNameWarningOpen, setTreeNameWarningOpen] = useState(false);
   const [pendingData, setPendingData] = useState<z.infer<typeof FormSchema> | null>(null);
   const [otherTreeName, setOtherTreeName] = useState<string | null>(null);
 
@@ -83,9 +85,16 @@ export function ConnectionForm({ currentTree, onAddConnection, allBits, connecti
     });
     form.reset();
     form.setValue('year', new Date().getFullYear());
+    setPendingData(null);
   }
 
   function onSubmit(data: z.infer<typeof FormSchema>) {
+    if (data.treeName && data.treeName.toLowerCase().endsWith('tree')) {
+        setPendingData(data);
+        setTreeNameWarningOpen(true);
+        return;
+    }
+
     const treeName = findBitInOtherTrees(connections, data.byte, data.treeName || currentTree);
     if (treeName) {
       setPendingData(data);
@@ -95,8 +104,8 @@ export function ConnectionForm({ currentTree, onAddConnection, allBits, connecti
       proceedWithSubmit(data);
     }
   }
-  
-  const handleConfirm = () => {
+
+  const handleByteWarningConfirm = () => {
     if (pendingData) {
       proceedWithSubmit(pendingData);
     }
@@ -105,11 +114,29 @@ export function ConnectionForm({ currentTree, onAddConnection, allBits, connecti
     setOtherTreeName(null);
   };
 
-  const handleCancel = () => {
+  const handleByteWarningCancel = () => {
     setWarningOpen(false);
     setPendingData(null);
     setOtherTreeName(null);
   };
+  
+  const handleTreeNameWarningConfirm = () => {
+    setTreeNameWarningOpen(false);
+    if (pendingData) {
+        const treeName = findBitInOtherTrees(connections, pendingData.byte, pendingData.treeName || currentTree);
+        if (treeName) {
+            setOtherTreeName(treeName);
+            setWarningOpen(true);
+        } else {
+            proceedWithSubmit(pendingData);
+        }
+    }
+  }
+
+  const handleTreeNameWarningCancel = () => {
+    setTreeNameWarningOpen(false);
+    setPendingData(null);
+  }
 
   // If the current tree selection changes, update the placeholder in the form
   useEffect(() => {
@@ -163,8 +190,15 @@ export function ConnectionForm({ currentTree, onAddConnection, allBits, connecti
                   <FormItem>
                     <FormLabel>Tree Name (Optional)</FormLabel>
                     <FormControl>
-                      <Input placeholder={currentTree !== 'No Trees Found' ? currentTree : 'Enter tree name'} {...field} />
+                      <Input 
+                        placeholder={currentTree !== 'No Trees Found' ? currentTree : 'Enter tree name'} 
+                        {...field} 
+                        list="trees-list"
+                      />
                     </FormControl>
+                     <datalist id="trees-list">
+                      {allTrees.map(tree => <option key={tree} value={tree} />)}
+                    </datalist>
                     <FormDescription>Defaults to the current tree if left blank.</FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -201,8 +235,25 @@ export function ConnectionForm({ currentTree, onAddConnection, allBits, connecti
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleCancel}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirm}>Confirm</AlertDialogAction>
+            <AlertDialogCancel onClick={handleByteWarningCancel}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleByteWarningConfirm}>Confirm</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={treeNameWarningOpen} onOpenChange={setTreeNameWarningOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Tree Name Warning</AlertDialogTitle>
+            <AlertDialogDescription>
+              The tree name you entered, '{pendingData?.treeName}', already ends with "Tree".
+              The resulting tree will be named '{pendingData?.treeName} Tree'.
+              Are you sure you want to proceed?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleTreeNameWarningCancel}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleTreeNameWarningConfirm}>Confirm</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

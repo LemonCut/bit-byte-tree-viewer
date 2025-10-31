@@ -10,6 +10,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
   SidebarGroupLabel,
+  SidebarInset,
 } from '@/components/ui/sidebar';
 import { TreeViewLogo } from '@/components/icons';
 import { buildTree, getTrees, getBits } from '@/lib/data';
@@ -83,6 +84,7 @@ export default function Home() {
               onAddConnection={handleAddConnection}
               allBits={allBits}
               connections={connections}
+              allTrees={allTrees}
             />
           </SidebarGroup>
         </SidebarContent>
@@ -95,7 +97,8 @@ export default function Home() {
           </div>
           <SearchDialog connections={connections} />
         </header>
-        <main className="p-4 md:p-6 lg:p-8 flex-1 overflow-auto">
+        <main className="flex-1 overflow-auto">
+          <div className="p-4 md:p-6 lg:p-8 h-full overflow-auto">
             {connections.length === 0 && (
               <Card className="mt-4">
                 <CardHeader>
@@ -120,6 +123,7 @@ export default function Home() {
                 </CardHeader>
               </Card>
             )}
+          </div>
         </main>
       </div>
     </SidebarProvider>
