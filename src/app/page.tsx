@@ -93,7 +93,7 @@ export default function Home() {
     // Find the original name (key) for the current new name (value)
     const originalName = Object.keys(treeAKAs).find(key => treeAKAs[key] === treeParam);
     if (originalName) {
-      pageSubTitle = `AKA ${originalName} Tree`;
+      pageSubTitle = `Previously... ${originalName} Tree`;
     }
   }
 
@@ -270,3 +270,5 @@ const OrgChartWrapper = ({ loading, connections, treeData, currentTreeName, tree
     </div>
   )
 }
+
+    
