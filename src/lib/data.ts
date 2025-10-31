@@ -5,7 +5,7 @@ import type { Connection, TreeNode, SearchResult } from '@/lib/types';
 
 export function getTrees(connections: Connection[]): string[] {
   const treeNames = new Set(connections.map((c) => c.treeName));
-  return Array.from(treeNames);
+  return Array.from(treeNames).sort();
 }
 
 export function getAllPeople(connections: Connection[]): string[] {
@@ -90,7 +90,7 @@ export function searchPeople(connections: Connection[], query: string): SearchRe
   const lowerCaseQuery = query.toLowerCase();
   const people = new Map<string, SearchResult>();
 
-  connections.forEach(({ bit, byte, treeName, year }) => {
+  connections.forEach(({ id, bit, byte, treeName, year }) => {
     const bitId = bit.replace(/\s+/g, '_');
     const byteId = byte.replace(/\s+/g, '_');
     
@@ -107,7 +107,8 @@ export function searchPeople(connections: Connection[], query: string): SearchRe
         treeName: treeName,
         year: year,
         byte: byte,
-        isRoot: false
+        isRoot: false,
+        id: id
       });
     }
 
@@ -133,6 +134,7 @@ export function searchPeople(connections: Connection[], query: string): SearchRe
                 isRoot: isRoot,
                 byte: null,
                 year: null,
+                id: id
             });
         }
       } else if (existingConnection.isRoot === false && isRoot) {

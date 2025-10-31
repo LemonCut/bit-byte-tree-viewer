@@ -8,13 +8,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { cn } from '@/lib/utils';
 
 type TreeSelectorProps = {
   trees: string[];
   defaultTree: string;
+  className?: string;
 };
 
-export function TreeSelector({ trees, defaultTree }: TreeSelectorProps) {
+export function TreeSelector({ trees, defaultTree, className }: TreeSelectorProps) {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const { replace } = useRouter();
@@ -31,7 +33,7 @@ export function TreeSelector({ trees, defaultTree }: TreeSelectorProps) {
 
   return (
     <Select onValueChange={handleSelect} defaultValue={defaultTree}>
-      <SelectTrigger className="w-full">
+      <SelectTrigger className={cn('w-full', className)}>
         <SelectValue placeholder="Select a tree" />
       </SelectTrigger>
       <SelectContent>

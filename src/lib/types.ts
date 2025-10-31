@@ -1,4 +1,5 @@
 export interface Connection {
+  id: string; // Firestore document ID
   byte: string;
   bit: string;
   treeName: string;
@@ -16,6 +17,7 @@ export interface SearchResult {
   id: string;
   name: string;
   connections: {
+    id: string;
     treeName: string;
     year: number | null;
     byte: string | null;
