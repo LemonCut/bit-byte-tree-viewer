@@ -147,7 +147,9 @@ export function DataManagement({ connections }: DataManagementProps) {
     <Card className="bg-transparent border-none shadow-none">
       <CardHeader className="p-0 mb-4">
         <CardTitle className="text-lg">Data Management</CardTitle>
-        <CardDescription>Import or export your data.</CardDescription>
+        <CardDescription>
+          Import or export your data. CSV must include headers: bit, byte, treeName, year.
+        </CardDescription>
       </CardHeader>
       <CardContent className="p-0 flex flex-col space-y-2">
         <input
