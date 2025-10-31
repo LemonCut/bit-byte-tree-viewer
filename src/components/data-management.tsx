@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore } from '@/firebase';
-import { collection, writeBatch } from 'firebase/firestore';
+import { collection, writeBatch, doc } from 'firebase/firestore';
 import type { Connection } from '@/lib/types';
 import Papa from 'papaparse';
 import { Upload, Download } from 'lucide-react';
@@ -36,7 +36,7 @@ export function DataManagement({ connections }: DataManagementProps) {
       return;
     }
 
-    Papa.parse<Connection>(file, {
+    Papa.parse<Omit<Connection, 'id'>>(file, {
       header: true,
       skipEmptyLines: true,
       complete: async (results) => {
@@ -54,10 +54,10 @@ export function DataManagement({ connections }: DataManagementProps) {
           const batch = writeBatch(firestore);
           const connectionsCollection = collection(firestore, 'connections');
           newConnections.forEach((conn) => {
-            // Ensure year is a number
+            // Ensure year is a number and required fields exist
             const year = Number(conn.year);
             if (conn.byte && conn.bit && conn.treeName && !isNaN(year)) {
-               const docRef = collection(firestore, 'connections').doc();
+               const docRef = doc(connectionsCollection); // Correctly create a new doc ref
                batch.set(docRef, { ...conn, year });
             }
           });
