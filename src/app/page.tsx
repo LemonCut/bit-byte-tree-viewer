@@ -16,7 +16,7 @@ import { TreeViewLogo } from '@/components/icons';
 import { buildTree, getTrees } from '@/lib/data';
 import { TreeSelector } from '@/components/tree-selector';
 import { ConnectionForm } from '@/components/connection-form';
-import { TreeView } from '@/components/tree-view';
+import { OrgChart } from '@/components/org-chart';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import type { Connection } from '@/lib/types';
@@ -85,7 +85,7 @@ export default function Home() {
             </Card>
           )}
           {connections.length > 0 && treeData.length > 0 && (
-            <TreeView data={treeData} />
+            <OrgChart data={treeData} />
           )}
           {connections.length > 0 && treeData.length === 0 && (
             <Card className="mt-4">
