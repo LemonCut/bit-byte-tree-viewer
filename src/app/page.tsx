@@ -42,6 +42,9 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
+import { AdminUnlock } from '@/components/admin-unlock';
+import { toast } from '@/hooks/use-toast';
+
 
 // ** IMPORTANT: Replace with the actual administrator's email address **
 const ADMIN_EMAIL = 'admin@example.com';
@@ -64,15 +67,9 @@ const SignInButton = () => {
     return <Button onClick={handleSignIn}>Sign in with Google</Button>;
 };
 
-const AdminSignInPrompt = ({ user }: { user: User | null }) => {
-    const [dialogOpen, setDialogOpen] = useState(true);
-
-    if (user && user.email === ADMIN_EMAIL) {
-        return null;
-    }
-
+const AdminSignInPrompt = ({ isOpen, onOpenChange }: { isOpen: boolean, onOpenChange: (open: boolean) => void; }) => {
     return (
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>Admin Access Required</DialogTitle>
@@ -93,9 +90,23 @@ export default function Home() {
   const searchParams = useSearchParams();
   const firestore = useFirestore();
   const { user: authUser, loading: authLoading } = useUser();
+  const [isAttemptingAdmin, setIsAttemptingAdmin] = useState(false);
 
   const isAdmin = authUser?.email === ADMIN_EMAIL;
+  
+  // Show the sign-in prompt only if admin access is attempted and the user is not signed in
+  const showSignInPrompt = isAttemptingAdmin && !authUser && !authLoading;
 
+  const handleUnlock = () => {
+    if (isAdmin) {
+        toast({
+            title: "Admin view already enabled.",
+        });
+        return;
+    }
+    setIsAttemptingAdmin(true);
+  };
+  
   const connectionsQuery = useMemo(
     () => (firestore ? collection(firestore, 'connections') : null),
     [firestore]
@@ -198,7 +209,7 @@ export default function Home() {
   // Regular user view or loading state
   return (
     <div className="flex flex-col h-screen">
-       {!authLoading && !authUser && <AdminSignInPrompt user={authUser} />}
+      <AdminSignInPrompt isOpen={showSignInPrompt} onOpenChange={setIsAttemptingAdmin} />
       <header className="flex items-center justify-between p-4 border-b sticky top-0 bg-background/80 backdrop-blur-sm z-20 h-16 shrink-0">
         <div className="flex items-center gap-2">
           <TreeViewLogo className="w-8 h-8" />
@@ -222,6 +233,7 @@ export default function Home() {
             <OrgChartWrapper loading={loading} connections={connections} treeData={treeData} currentTreeName={currentTreeName} />
           </div>
         </main>
+        <AdminUnlock onClick={handleUnlock} />
       </div>
     </div>
   );
