@@ -36,11 +36,11 @@ export function DataManagement({ connections }: DataManagementProps) {
       return;
     }
 
-    Papa.parse<Omit<Connection, 'id'>>(file, {
+    Papa.parse(file, {
       header: true,
       skipEmptyLines: true,
       complete: async (results) => {
-        const newConnections = results.data;
+        const newConnections = results.data as Omit<Connection, 'id'>[];
         if (newConnections.length === 0) {
           toast({
             variant: 'destructive',
