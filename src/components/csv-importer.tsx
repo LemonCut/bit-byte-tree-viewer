@@ -32,21 +32,21 @@ export function CsvImporter({ onDataLoaded }: CsvImporterProps) {
         skipEmptyLines: true,
         complete: (results) => {
           // Basic validation
-          if (!results.meta.fields || !results.meta.fields.includes('big') || !results.meta.fields.includes('little')) {
+          if (!results.meta.fields || !results.meta.fields.includes('byte_name') || !results.meta.fields.includes('bit_name')) {
             toast({
               variant: 'destructive',
               title: 'Invalid CSV format',
-              description: 'CSV must have "big" and "little" columns.',
+              description: 'CSV must have "byte_name" and "bit_name" columns.',
             });
             return;
           }
           
           const connectionsData = results.data.map((row: any) => ({
-            big: row.big,
-            little: row.little,
-            treeName: row.treeName || 'Default Tree',
+            byte: row.byte_name,
+            bit: row.bit_name,
+            treeName: row.tree || 'Default Tree',
             year: row.year ? parseInt(row.year, 10) : new Date().getFullYear(),
-          })).filter(c => c.big && c.little);
+          })).filter(c => c.byte && c.bit);
 
           onDataLoaded(connectionsData as Connection[]);
           toast({

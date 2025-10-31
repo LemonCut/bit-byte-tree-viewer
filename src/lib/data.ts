@@ -11,8 +11,8 @@ export function getTrees(connections: Connection[]): string[] {
 export function getPeople(connections: Connection[]): string[] {
   const people = new Set<string>();
   connections.forEach((c) => {
-    people.add(c.big);
-    people.add(c.little);
+    people.add(c.byte);
+    people.add(c.bit);
   });
   return Array.from(people).sort();
 }
@@ -27,30 +27,30 @@ export function buildTree(
   if (relevantConnections.length === 0) return [];
 
   const nodes: { [key: string]: TreeNode } = {};
-  const littles = new Set<string>();
+  const bits = new Set<string>();
 
-  // Initialize all nodes and track who is a little
-  relevantConnections.forEach(({ big, little }) => {
-    littles.add(little);
-    if (!nodes[big]) {
-      nodes[big] = { id: big, name: big, children: [] };
+  // Initialize all nodes and track who is a bit
+  relevantConnections.forEach(({ byte, bit }) => {
+    bits.add(bit);
+    if (!nodes[byte]) {
+      nodes[byte] = { id: byte, name: byte, children: [] };
     }
-    if (!nodes[little]) {
-      nodes[little] = { id: little, name: little, children: [] };
+    if (!nodes[bit]) {
+      nodes[bit] = { id: bit, name: bit, children: [] };
     }
   });
 
   // Populate children
-  relevantConnections.forEach(({ big, little }) => {
+  relevantConnections.forEach(({ byte, bit }) => {
     // Ensure parent exists before trying to push child
-    if (nodes[big]) {
-      nodes[big].children.push(nodes[little]);
+    if (nodes[byte]) {
+      nodes[byte].children.push(nodes[bit]);
     }
   });
 
-  // Find root nodes (those who are not littles in this tree)
+  // Find root nodes (those who are not bits in this tree)
   const rootNodes = Object.values(nodes).filter(
-    (node) => !littles.has(node.name)
+    (node) => !bits.has(node.name)
   );
 
   return rootNodes;

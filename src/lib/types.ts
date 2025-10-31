@@ -1,6 +1,6 @@
 export interface Connection {
-  big: string;
-  little: string;
+  byte: string;
+  bit: string;
   treeName: string;
   year: number;
 }

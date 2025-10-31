@@ -27,8 +27,8 @@ import { useToast } from '@/hooks/use-toast';
 import type { Connection } from '@/lib/types';
 
 const FormSchema = z.object({
-  big: z.string().min(1, 'Big name is required.'),
-  little: z.string().min(1, 'Little name is required.'),
+  byte: z.string().min(1, 'Byte name is required.'),
+  bit: z.string().min(1, 'Bit name is required.'),
   treeName: z.string(), // can be empty
   year: z.coerce
     .number()
@@ -50,8 +50,8 @@ export function ConnectionForm({ currentTree, onAddConnection }: ConnectionFormP
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
-      big: '',
-      little: '',
+      byte: '',
+      bit: '',
       treeName: '',
       year: new Date().getFullYear(),
     },
@@ -79,17 +79,17 @@ export function ConnectionForm({ currentTree, onAddConnection }: ConnectionFormP
     <Card className="bg-transparent border-none shadow-none">
       <CardHeader className="p-0 mb-4">
         <CardTitle className="text-lg">New Connection</CardTitle>
-        <CardDescription>Add a new big/little relationship.</CardDescription>
+        <CardDescription>Add a new byte/bit relationship.</CardDescription>
       </CardHeader>
       <CardContent className="p-0">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
-              name="big"
+              name="byte"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Big's Name</FormLabel>
+                  <FormLabel>Byte's Name</FormLabel>
                   <FormControl>
                     <Input placeholder="Enter name" {...field} />
                   </FormControl>
@@ -99,10 +99,10 @@ export function ConnectionForm({ currentTree, onAddConnection }: ConnectionFormP
             />
             <FormField
               control={form.control}
-              name="little"
+              name="bit"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Little's Name</FormLabel>
+                  <FormLabel>Bit's Name</FormLabel>
                   <FormControl>
                     <Input placeholder="Enter name" {...field} />
                   </FormControl>
