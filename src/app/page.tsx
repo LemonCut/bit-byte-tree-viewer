@@ -15,6 +15,7 @@ import { TreeViewLogo } from '@/components/icons';
 import { buildTree, getTrees, getBits } from '@/lib/data';
 import { TreeSelector } from '@/components/tree-selector';
 import { ConnectionForm } from '@/components/connection-form';
+import { DataManagement } from '@/components/data-management';
 import { OrgChart } from '@/components/org-chart';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -89,6 +90,10 @@ export default function Home() {
               allTrees={allTrees}
             />
           </SidebarGroup>
+          <Separator />
+           <SidebarGroup>
+             <DataManagement connections={connections || []} />
+           </SidebarGroup>
         </SidebarContent>
       </Sidebar>
       <div className="flex flex-col flex-1 min-w-0">
@@ -116,7 +121,7 @@ export default function Home() {
                 <CardHeader>
                   <CardTitle>No Data Found</CardTitle>
                   <CardDescription>
-                    Your database is empty. Add a connection to get started.
+                    Your database is empty. Add a connection or import a CSV to get started.
                   </CardDescription>
                 </CardHeader>
               </Card>
