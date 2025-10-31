@@ -3,7 +3,7 @@
 import { Chart } from 'react-google-charts';
 import type { TreeNode } from '@/lib/types';
 import { useEffect, useState, useRef } from 'react';
-import type { GoogleChartWrapper, ChartSelection } from 'react-google-charts';
+import type { GoogleChartWrapper } from 'react-google-charts';
 
 interface OrgChartProps {
   data: TreeNode[];
@@ -107,9 +107,7 @@ export function OrgChart({ data, highlightedNode, onHighlightComplete }: OrgChar
         width="100%"
         height="400px"
         getChartWrapper={wrapper => {
-          if (wrapper) {
-            (chartWrapperRef as React.MutableRefObject<GoogleChartWrapper | null>).current = wrapper;
-          }
+          chartWrapperRef.current = wrapper;
         }}
         options={{
           allowHtml: true,
