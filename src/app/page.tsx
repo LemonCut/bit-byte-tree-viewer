@@ -28,16 +28,34 @@ import {
 } from '@/components/ui/card';
 import type { Connection } from '@/lib/types';
 import { SearchDialog } from '@/components/search-dialog';
-import { useCollection, useMemoFirebase } from '@/firebase';
+import { useCollection, useMemoFirebase, useUser } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AdminUnlock } from '@/components/admin-unlock';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
+import { Button } from '@/components/ui/button';
+import { LogOut } from 'lucide-react';
 
 export default function Home() {
   const searchParams = useSearchParams();
   const firestore = useFirestore();
+  const { user, isUserLoading } = useUser();
+  
   const [isAdmin, setIsAdmin] = useState(false);
+  
+  // Effect to check admin status when user changes
+  useMemo(() => {
+    if (user && process.env.NEXT_PUBLIC_ADMIN_EMAIL) {
+      if (user.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL) {
+        setIsAdmin(true);
+      } else {
+        setIsAdmin(false); // Ensure non-admins are logged out of admin view
+      }
+    } else {
+      setIsAdmin(false);
+    }
+  }, [user]);
   
   const connectionsQuery = useMemoFirebase(
     () => (firestore ? collection(firestore, 'connections') : null),
@@ -45,7 +63,7 @@ export default function Home() {
   );
   const { data: connections, loading: connectionsLoading } = useCollection<Connection>(connectionsQuery);
 
-  const loading = connectionsLoading;
+  const loading = connectionsLoading || isUserLoading;
 
   const allTrees = useMemo(
     () => (connections ? getTrees(connections) : []),
@@ -77,14 +95,41 @@ export default function Home() {
       ? 'No Data'
       : `${currentTreeName} Tree`;
 
+  const handleAdminLogin = async () => {
+    const auth = getAuth();
+    const provider = new GoogleAuthProvider();
+    try {
+      const result = await signInWithPopup(auth, provider);
+      if (result.user.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL) {
+        setIsAdmin(true);
+      } else {
+        await signOut(auth);
+        alert('You are not authorized to view this page.');
+      }
+    } catch (error) {
+      console.error("Authentication Error: ", error);
+    }
+  };
+
+  const handleLogout = async () => {
+    const auth = getAuth();
+    await signOut(auth);
+    setIsAdmin(false);
+  }
+
   if (isAdmin) {
     return (
       <SidebarProvider>
         <Sidebar>
           <SidebarHeader>
-            <div className="flex items-center gap-2 p-2">
-              <TreeViewLogo className="w-8 h-8" />
-              <h1 className="text-2xl font-bold">TreeView</h1>
+            <div className="flex items-center justify-between p-2">
+                <div className="flex items-center gap-2">
+                    <TreeViewLogo className="w-8 h-8" />
+                    <h1 className="text-2xl font-bold">TreeView</h1>
+                </div>
+                <Button variant="ghost" size="icon" onClick={handleLogout} title="Sign Out">
+                    <LogOut />
+                </Button>
             </div>
             <p className="text-xs text-center text-muted-foreground">Admin Mode</p>
           </SidebarHeader>
@@ -164,7 +209,7 @@ export default function Home() {
             <OrgChartWrapper loading={loading} connections={connections} treeData={treeData} currentTreeName={currentTreeName} />
           </div>
         </main>
-        <AdminUnlock onUnlock={() => setIsAdmin(true)} />
+        <AdminUnlock onUnlock={handleAdminLogin} />
       </div>
     </div>
   );
