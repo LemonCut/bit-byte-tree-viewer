@@ -45,34 +45,40 @@ export function buildTree(
 
   // Initialize all nodes and track who is a bit
   relevantConnections.forEach(({ byte, bit, year }) => {
-    bits.add(bit);
-    if (!nodes[byte]) {
-      nodes[byte] = { id: byte, name: byte, children: [] };
+    const byteId = byte.replace(/\s+/g, '_');
+    const bitId = bit.replace(/\s+/g, '_');
+    
+    bits.add(byte); // Any 'byte' is a parent, so we use their name to check for roots later.
+    if (!nodes[byteId]) {
+      nodes[byteId] = { id: byteId, name: byte, children: [] };
     }
-    if (!nodes[bit]) {
+    if (!nodes[bitId]) {
       // Assign the year to the bit when it's created
-      nodes[bit] = { id: bit, name: bit, year: year, children: [] };
-    } else if (!nodes[bit].year) {
+      nodes[bitId] = { id: bitId, name: bit, year: year, children: [] };
+    } else if (!nodes[bitId].year) {
       // If the bit node was already created (e.g. as a byte in another connection)
       // assign the year. This takes the year from its first appearance as a 'bit'.
-      nodes[bit].year = year;
+      nodes[bitId].year = year;
     }
   });
 
   // Populate children
   relevantConnections.forEach(({ byte, bit }) => {
+    const byteId = byte.replace(/\s+/g, '_');
+    const bitId = bit.replace(/\s+/g, '_');
     // Ensure parent exists before trying to push child
-    if (nodes[byte] && nodes[bit]) {
+    if (nodes[byteId] && nodes[bitId]) {
        // Avoid adding duplicates
-      if (!nodes[byte].children.some(child => child.id === nodes[bit].id)) {
-        nodes[byte].children.push(nodes[bit]);
+      if (!nodes[byteId].children.some(child => child.id === nodes[bitId].id)) {
+        nodes[byteId].children.push(nodes[bitId]);
       }
     }
   });
-
-  // Find root nodes (those who are not bits in this tree)
+  
+  // Find root nodes (bytes who are never bits in THIS tree)
+  const bitsInThisTree = new Set(relevantConnections.map(c => c.bit));
   const rootNodes = Object.values(nodes).filter(
-    (node) => !bits.has(node.name)
+    (node) => !bitsInThisTree.has(node.name)
   );
 
   return rootNodes;
@@ -85,11 +91,15 @@ export function searchPeople(connections: Connection[], query: string): SearchRe
   const people = new Map<string, SearchResult>();
 
   connections.forEach(({ bit, byte, treeName, year }) => {
+    const bitId = bit.replace(/\s+/g, '_');
+    const byteId = byte.replace(/\s+/g, '_');
+    
     // Check bit
     if (bit.toLowerCase().includes(lowerCaseQuery)) {
       if (!people.has(bit)) {
         people.set(bit, {
           name: bit,
+          id: bitId,
           connections: [],
         });
       }
@@ -108,6 +118,7 @@ export function searchPeople(connections: Connection[], query: string): SearchRe
       if (!people.has(byte)) {
         people.set(byte, {
           name: byte,
+          id: byteId,
           connections: [],
         });
       }

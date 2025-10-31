@@ -13,6 +13,7 @@ export interface TreeNode {
 }
 
 export interface SearchResult {
+  id: string;
   name: string;
   connections: {
     treeName: string;

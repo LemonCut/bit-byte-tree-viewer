@@ -78,7 +78,7 @@ export function SearchDialog({ connections }: SearchDialogProps) {
                     {person.connections.map((conn, index) => (
                       <li key={`${conn.treeName}-${index}`} className="text-sm text-muted-foreground">
                         <Link 
-                          href={`/?tree=${encodeURIComponent(conn.treeName)}&highlight=${encodeURIComponent(person.name)}`}
+                          href={`/?tree=${encodeURIComponent(conn.treeName)}&highlight=${encodeURIComponent(person.id)}`}
                           onClick={() => handleOpenChange(false)}
                           className="hover:underline hover:text-primary"
                         >
