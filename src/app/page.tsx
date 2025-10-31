@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
   Sidebar,
@@ -18,7 +18,12 @@ import { TreeSelector } from '@/components/tree-selector';
 import { ConnectionForm } from '@/components/connection-form';
 import { OrgChart } from '@/components/org-chart';
 import { Separator } from '@/components/ui/separator';
-import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from '@/components/ui/card';
 import type { Connection } from '@/lib/types';
 import { CsvImporter } from '@/components/csv-importer';
 import { SearchDialog } from '@/components/search-dialog';
@@ -28,36 +33,31 @@ const initialConnections: Connection[] = [];
 
 export default function Home() {
   const searchParams = useSearchParams();
-  const [connections, setConnections] = useState<Connection[]>(initialConnections);
-  const [highlightedNode, setHighlightedNode] = useState<string | null>(null);
+  const [connections, setConnections] =
+    useState<Connection[]>(initialConnections);
 
   const allTrees = useMemo(() => getTrees(connections), [connections]);
-  const currentTreeName = searchParams.get('tree') || allTrees[0] || 'No Trees Found';
+  const currentTreeName =
+    searchParams.get('tree') || allTrees[0] || 'No Trees Found';
   const allBits = useMemo(() => getBits(connections), [connections]);
-  
-  const treeData = useMemo(() => buildTree(connections, currentTreeName), [connections, currentTreeName]);
 
-  useEffect(() => {
-    const highlight = searchParams.get('highlight');
-    if (highlight) {
-      setHighlightedNode(highlight);
-      // The OrgChart component will handle clearing the highlight.
-      // We can remove it from the URL to keep it clean.
-      const newParams = new URLSearchParams(window.location.search);
-      newParams.delete('highlight');
-      window.history.replaceState({}, '', `${window.location.pathname}?${newParams}`);
-    }
-  }, [searchParams]);
+  const treeData = useMemo(
+    () => buildTree(connections, currentTreeName),
+    [connections, currentTreeName]
+  );
 
   const handleAddConnection = (newConnection: Connection) => {
-    setConnections(prev => [...prev, newConnection]);
+    setConnections((prev) => [...prev, newConnection]);
   };
-  
+
   const handleDataLoaded = (data: Connection[]) => {
     setConnections(data);
-  }
-  
-  const pageTitle = currentTreeName === 'No Trees Found' ? currentTreeName : `${currentTreeName} Tree`;
+  };
+
+  const pageTitle =
+    currentTreeName === 'No Trees Found'
+      ? currentTreeName
+      : `${currentTreeName} Tree`;
 
   return (
     <SidebarProvider>
@@ -74,13 +74,13 @@ export default function Home() {
             <TreeSelector trees={allTrees} defaultTree={currentTreeName} />
           </SidebarGroup>
           <Separator />
-           <SidebarGroup>
-             <CsvImporter onDataLoaded={handleDataLoaded} />
+          <SidebarGroup>
+            <CsvImporter onDataLoaded={handleDataLoaded} />
           </SidebarGroup>
           <Separator />
           <SidebarGroup>
-            <ConnectionForm 
-              currentTree={currentTreeName} 
+            <ConnectionForm
+              currentTree={currentTreeName}
               onAddConnection={handleAddConnection}
               allBits={allBits}
               connections={connections}
@@ -91,14 +91,14 @@ export default function Home() {
       <SidebarInset>
         <header className="flex items-center justify-between p-4 border-b sticky top-0 bg-background/80 backdrop-blur-sm z-10 h-16">
           <div className="flex items-center gap-4">
-             <SidebarTrigger className="md:hidden" />
-             <h2 className="text-2xl font-bold tracking-tight">{pageTitle}</h2>
+            <SidebarTrigger className="md:hidden" />
+            <h2 className="text-2xl font-bold tracking-tight">{pageTitle}</h2>
           </div>
           <SearchDialog connections={connections} />
         </header>
         <main className="p-4 md:p-6 lg:p-8">
           {connections.length === 0 && (
-             <Card className="mt-4">
+            <Card className="mt-4">
               <CardHeader>
                 <CardTitle>No Data Loaded</CardTitle>
                 <CardDescription>
@@ -108,18 +108,15 @@ export default function Home() {
             </Card>
           )}
           {connections.length > 0 && treeData.length > 0 && (
-            <OrgChart 
-              data={treeData} 
-              highlightedNode={highlightedNode} 
-              onHighlightComplete={() => setHighlightedNode(null)}
-            />
+            <OrgChart data={treeData} />
           )}
           {connections.length > 0 && treeData.length === 0 && (
             <Card className="mt-4">
               <CardHeader>
                 <CardTitle>No Data</CardTitle>
                 <CardDescription>
-                  No connections found for the '{currentTreeName}' tree. Try selecting another tree or adding a new connection.
+                  No connections found for the '{currentTreeName}' tree. Try
+                  selecting another tree or adding a new connection.
                 </CardDescription>
               </CardHeader>
             </Card>

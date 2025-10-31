@@ -2,18 +2,19 @@
 
 import { Chart } from 'react-google-charts';
 import type { TreeNode } from '@/lib/types';
-import { useEffect, useState, useRef } from 'react';
-import type { GoogleChartWrapper } from 'react-google-charts';
+import { useEffect, useState } from 'react';
 
 interface OrgChartProps {
   data: TreeNode[];
-  highlightedNode: string | null;
-  onHighlightComplete: () => void;
 }
 
 // Function to convert our tree data into the format Google Charts expects
-function formatDataForGoogleChart(treeData: TreeNode[]): (string | { v: string; f: string; } | null)[][] {
-  const chartData: (string | { v:string; f: string } | null)[][] = [['Name', 'Parent', 'Tooltip']];
+function formatDataForGoogleChart(
+  treeData: TreeNode[]
+): (string | { v: string; f: string } | null)[][] {
+  const chartData: (string | { v: string; f: string } | null)[][] = [
+    ['Name', 'Parent', 'Tooltip'],
+  ];
   const addedNodes = new Set<string>();
 
   function createTooltip(node: TreeNode): string {
@@ -27,16 +28,12 @@ function formatDataForGoogleChart(treeData: TreeNode[]): (string | { v: string; 
       const nodeId = node.id;
       const nodeParent = parent;
       const tooltip = createTooltip(node);
-      
+
       if (!addedNodes.has(nodeId)) {
-         chartData.push([
-            { v: nodeId, f: node.name },
-            nodeParent,
-            tooltip,
-        ]);
+        chartData.push([{ v: nodeId, f: node.name }, nodeParent, tooltip]);
         addedNodes.add(nodeId);
       }
-      
+
       if (node.children && node.children.length > 0) {
         traverse(node.children, nodeId);
       }
@@ -44,14 +41,14 @@ function formatDataForGoogleChart(treeData: TreeNode[]): (string | { v: string; 
   }
 
   traverse(treeData);
-  
+
   return chartData;
 }
 
-
-export function OrgChart({ data, highlightedNode, onHighlightComplete }: OrgChartProps) {
-  const chartWrapperRef = useRef<GoogleChartWrapper | null>(null);
-  const [chartData, setChartData] = useState<(string | { v: string; f: string; } | null)[][]>([]);
+export function OrgChart({ data }: OrgChartProps) {
+  const [chartData, setChartData] = useState<
+    (string | { v: string; f: string } | null)[][]
+  >([]);
 
   useEffect(() => {
     if (data && data.length > 0) {
@@ -60,37 +57,6 @@ export function OrgChart({ data, highlightedNode, onHighlightComplete }: OrgChar
       setChartData([]);
     }
   }, [data]);
-
-  useEffect(() => {
-    if (highlightedNode && chartWrapperRef.current && chartData.length > 0) {
-      const chartWrapper = chartWrapperRef.current;
-      const chart = chartWrapper.getChart();
-      const dataTable = chartWrapper.getDataTable();
-      
-      if (chart && dataTable) {
-        // Find the row index of the node to highlight
-        let rowIndex: number | null = null;
-        // The ID in chartData is the `v` property of the first element in each row object.
-        for (let i = 1; i < chartData.length; i++) { // Start from 1 to skip header
-          const node = chartData[i][0];
-          // Compare the `highlightedNode` prop against the `v` property (the sanitized ID).
-          if (typeof node === 'object' && node !== null && node.v === highlightedNode) {
-            rowIndex = i - 1; // Subtract 1 because dataTable rows are 0-indexed from data
-            break;
-          }
-        }
-        
-        if (rowIndex !== null) {
-            (chart as any).setSelection([{ row: rowIndex, column: null }]);
-            // We call onHighlightComplete immediately to clear the state in the parent,
-            // but the selection in the chart remains.
-            onHighlightComplete();
-        } else {
-           onHighlightComplete(); // Node not found, complete highlight cycle
-        }
-      }
-    }
-  }, [highlightedNode, onHighlightComplete, chartData]);
 
   if (!data || data.length === 0) {
     return null;
@@ -103,13 +69,10 @@ export function OrgChart({ data, highlightedNode, onHighlightComplete }: OrgChar
         data={chartData}
         width="100%"
         height="400px"
-        getChartWrapper={wrapper => {
-          chartWrapperRef.current = wrapper;
-        }}
         options={{
           allowHtml: true,
           nodeClass: 'google-chart-node',
-          selectedNodeClass: 'google-chart-node-selected',        
+          selectedNodeClass: 'google-chart-node-selected',
         }}
       />
     </div>
