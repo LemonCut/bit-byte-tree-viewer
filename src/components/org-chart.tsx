@@ -30,7 +30,7 @@ function formatDataForGoogleChart(treeData: TreeNode[]): (string | { v: string; 
       
       if (!addedNodes.has(nodeId)) {
          chartData.push([
-            { v: nodeId, f: node.name }, // Use ID for `v` and Name for `f`
+            { v: nodeId, f: node.name }, // CRITICAL FIX: Use the sanitized 'id' for 'v'
             nodeParent,
             tooltip,
         ]);
@@ -72,7 +72,7 @@ export function OrgChart({ data, highlightedNode, onHighlightComplete }: OrgChar
         // The ID in chartData is the `v` property of the first element in each row object.
         for (let i = 1; i < chartData.length; i++) { // Start from 1 to skip header
           const node = chartData[i][0];
-          // CRITICAL FIX: Compare the `highlightedNode` prop against the `v` property (the sanitized ID).
+          // Compare the `highlightedNode` prop against the `v` property (the sanitized ID).
           if (typeof node === 'object' && node !== null && node.v === highlightedNode) {
             rowIndex = i - 1; // Subtract 1 because dataTable rows are 0-indexed from data
             break;
