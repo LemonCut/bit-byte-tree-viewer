@@ -25,6 +25,7 @@ import {
   CardHeader,
   CardTitle,
   CardDescription,
+  CardContent,
 } from '@/components/ui/card';
 import type { Connection } from '@/lib/types';
 import { SearchDialog } from '@/components/search-dialog';
@@ -34,7 +35,7 @@ import { useFirestore } from '@/firebase';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AdminUnlock } from '@/components/admin-unlock';
 import { Button } from '@/components/ui/button';
-import { LogOut } from 'lucide-react';
+import { LogOut, Search, Share2 } from 'lucide-react';
 
 export default function Home() {
   const searchParams = useSearchParams();
@@ -49,13 +50,16 @@ export default function Home() {
   const { data: connections, loading: connectionsLoading } = useCollection<Connection>(connectionsQuery);
 
   const loading = connectionsLoading;
+  
+  const treeParam = searchParams.get('tree');
 
   const allTrees = useMemo(
     () => (connections ? getTrees(connections) : []),
     [connections]
   );
-  const currentTreeName =
-    searchParams.get('tree') || allTrees[0] || 'No Trees Found';
+  
+  const currentTreeName = treeParam || allTrees[0] || 'No Trees Found';
+
   const allBits = useMemo(
     () => (connections ? getBits(connections) : []),
     [connections]
@@ -71,14 +75,11 @@ export default function Home() {
 
   const treeData = useMemo(
     () =>
-      connections ? buildTree(connections, currentTreeName) : [],
-    [connections, currentTreeName]
+      connections && treeParam ? buildTree(connections, treeParam) : [],
+    [connections, treeParam]
   );
 
-  const pageTitle =
-    currentTreeName === 'No Trees Found'
-      ? 'No Data'
-      : `${currentTreeName} Tree`;
+  const pageTitle = treeParam ? `${treeParam} Tree` : 'Welcome';
 
   const handleAdminToggle = () => {
     setIsAdmin(!isAdmin);
@@ -142,7 +143,7 @@ export default function Home() {
           </header>
           <main className="flex-1 overflow-auto">
             <div className="p-4 md:p-6 lg:p-8 h-full overflow-auto">
-              <OrgChartWrapper loading={loading} connections={connections} treeData={treeData} currentTreeName={currentTreeName} />
+              <OrgChartWrapper loading={loading} connections={connections} treeData={treeData} currentTreeName={currentTreeName} treeParam={treeParam} />
             </div>
           </main>
         </div>
@@ -173,7 +174,7 @@ export default function Home() {
         <main className="h-full overflow-auto">
           <div className="p-4 md:p-6 lg:p-8 h-full overflow-auto">
              <h2 className="text-2xl font-bold tracking-tight mb-4">{pageTitle}</h2>
-            <OrgChartWrapper loading={loading} connections={connections} treeData={treeData} currentTreeName={currentTreeName} />
+            <OrgChartWrapper loading={loading} connections={connections} treeData={treeData} currentTreeName={currentTreeName} treeParam={treeParam} />
           </div>
         </main>
         <AdminUnlock onUnlock={handleAdminToggle} />
@@ -182,7 +183,25 @@ export default function Home() {
   );
 }
 
-const OrgChartWrapper = ({ loading, connections, treeData, currentTreeName }: { loading: boolean, connections: Connection[] | null, treeData: any[], currentTreeName: string }) => {
+const OrgChartWrapper = ({ loading, connections, treeData, currentTreeName, treeParam }: { loading: boolean, connections: Connection[] | null, treeData: any[], currentTreeName: string, treeParam: string | null }) => {
+  if (!treeParam && !loading) {
+    return (
+       <div className="flex items-center justify-center h-full">
+            <Card className="w-full max-w-md text-center">
+                <CardHeader>
+                    <div className="mx-auto bg-primary/20 p-3 rounded-full w-fit">
+                        <Share2 className="w-8 h-8 text-primary" />
+                    </div>
+                    <CardTitle className="mt-4">Welcome to TreeView</CardTitle>
+                    <CardDescription>
+                        To get started, select a tree from the dropdown menu at the top right, or use the search icon to find a specific person.
+                    </CardDescription>
+                </CardHeader>
+            </Card>
+       </div>
+    )
+  }
+
   return (
     <>
       {loading && (
@@ -208,7 +227,7 @@ const OrgChartWrapper = ({ loading, connections, treeData, currentTreeName }: { 
       {!loading && connections && connections.length > 0 && treeData.length > 0 && (
         <OrgChart data={treeData} currentTreeName={currentTreeName} />
       )}
-      {!loading && connections && connections.length > 0 && treeData.length === 0 && (
+      {!loading && connections && connections.length > 0 && treeData.length === 0 && treeParam &&(
         <Card className="mt-4">
           <CardHeader>
             <CardTitle>No Data in Tree</CardTitle>
