@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Search } from 'lucide-react';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -21,6 +22,7 @@ interface SearchDialogProps {
 }
 
 export function SearchDialog({ connections }: SearchDialogProps) {
+  const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
 
@@ -35,15 +37,16 @@ export function SearchDialog({ connections }: SearchDialogProps) {
     }
   };
   
-  const handleOpenChange = (open: boolean) => {
-    if (!open) {
+  const handleOpenChange = (isOpen: boolean) => {
+    setOpen(isOpen);
+    if (!isOpen) {
       setSearchQuery('');
       setSearchResults([]);
     }
   }
 
   return (
-    <Dialog onOpenChange={handleOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button variant="ghost" size="icon">
           <Search className="h-5 w-5" />
@@ -74,9 +77,15 @@ export function SearchDialog({ connections }: SearchDialogProps) {
                   <ul className="pl-4 space-y-1 mt-1">
                     {person.connections.map((conn, index) => (
                       <li key={`${conn.treeName}-${index}`} className="text-sm text-muted-foreground">
-                        {conn.isRoot
-                          ? `${conn.treeName} - Root Byte`
-                          : `${conn.treeName} - ${conn.year} - ${conn.byte}'s Bit`}
+                        <Link 
+                          href={`/?tree=${encodeURIComponent(conn.treeName)}&highlight=${encodeURIComponent(person.name)}`}
+                          onClick={() => handleOpenChange(false)}
+                          className="hover:underline hover:text-primary"
+                        >
+                            {conn.isRoot
+                            ? `${conn.treeName} Tree - Root Byte`
+                            : `${conn.treeName} Tree - ${conn.year} - ${conn.byte}'s Bit`}
+                        </Link>
                       </li>
                     ))}
                   </ul>

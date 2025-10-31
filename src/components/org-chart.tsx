@@ -2,14 +2,18 @@
 
 import { Chart } from 'react-google-charts';
 import type { TreeNode } from '@/lib/types';
+import { useEffect, useState, useRef } from 'react';
+import type { GoogleChartWrapper, ChartSelection } from 'react-google-charts';
 
 interface OrgChartProps {
   data: TreeNode[];
+  highlightedNode: string | null;
+  onHighlightComplete: () => void;
 }
 
 // Function to convert our tree data into the format Google Charts expects
 function formatDataForGoogleChart(treeData: TreeNode[]): (string | { v: string; f: string; } | null)[][] {
-  const chartData: (string | { v: string; f: string; } | null)[][] = [['Name', 'Parent', 'Tooltip']];
+  const chartData: (string | { v:string; f: string } | null)[][] = [['Name', 'Parent', 'Tooltip']];
   const addedNodes = new Set<string>();
 
   function createTooltip(node: TreeNode): string {
@@ -46,12 +50,52 @@ function formatDataForGoogleChart(treeData: TreeNode[]): (string | { v: string; 
 }
 
 
-export function OrgChart({ data }: OrgChartProps) {
+export function OrgChart({ data, highlightedNode, onHighlightComplete }: OrgChartProps) {
+  const chartWrapperRef = useRef<GoogleChartWrapper>(null);
+  const [chartData, setChartData] = useState<(string | { v: string; f: string; } | null)[][]>([]);
+
+  useEffect(() => {
+    if (data && data.length > 0) {
+      setChartData(formatDataForGoogleChart(data));
+    } else {
+      setChartData([]);
+    }
+  }, [data]);
+
+  useEffect(() => {
+    if (highlightedNode && chartWrapperRef.current && chartData.length > 0) {
+      const chart = chartWrapperRef.current.getChart();
+      const dataTable = chartWrapperRef.current.getDataTable();
+      
+      if (chart && dataTable) {
+        // Find the row index of the node to highlight
+        let rowIndex: number | null = null;
+        for (let i = 1; i < chartData.length; i++) {
+          const node = chartData[i][0];
+          if (typeof node === 'object' && node !== null && node.v === highlightedNode) {
+            rowIndex = i - 1; // Subtract 1 for the header row
+            break;
+          }
+        }
+        
+        if (rowIndex !== null) {
+            chart.setSelection([{ row: rowIndex, column: null }]);
+            
+            // Set a timer to remove the highlight
+            setTimeout(() => {
+                chart.setSelection(null);
+                onHighlightComplete();
+            }, 1500); // Highlight for 1.5 seconds
+        } else {
+           onHighlightComplete(); // Node not found, complete highlight cycle
+        }
+      }
+    }
+  }, [highlightedNode, onHighlightComplete, chartData]);
+
   if (!data || data.length === 0) {
     return null;
   }
-
-  const chartData = formatDataForGoogleChart(data);
 
   return (
     <div className="w-full h-full">
@@ -60,6 +104,9 @@ export function OrgChart({ data }: OrgChartProps) {
         data={chartData}
         width="100%"
         height="400px"
+        getChartWrapper={wrapper => {
+          chartWrapperRef.current = wrapper;
+        }}
         options={{
           allowHtml: true,
           nodeClass: 'bg-card text-card-foreground',
