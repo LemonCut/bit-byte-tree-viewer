@@ -1,19 +1,20 @@
-import Image from 'next/image';
-import type { ComponentProps } from 'react';
+import type { SVGProps } from 'react';
 
-// Explicitly define the props for the logo component.
-// This allows passing any standard Image prop except for 'src' and 'alt'.
-type TreeViewLogoProps = Omit<ComponentProps<typeof Image>, 'src' | 'alt'>;
-
-export function TreeViewLogo(props: TreeViewLogoProps) {
-  // The src path must be a root-relative path to the image in the `public` directory.
+export function TreeViewLogo(props: SVGProps<SVGSVGElement>) {
   return (
-    <Image
-      src="/images/logo.png"
-      alt="TreeView Logo"
-      width={32} // Default width, can be overridden by props
-      height={32} // Default height, can be overridden by props
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      width={32}
+      height={32}
       {...props}
-    />
+    >
+      <path d="M12.45 2.22a2.5 2.5 0 0 0-3.9 0L2.22 8.55a2.5 2.5 0 0 0 0 3.9l6.33 6.33a2.5 2.5 0 0 0 3.9 0l6.33-6.33a2.5 2.5 0 0 0 0-3.9L12.45 2.22Z" />
+    </svg>
   );
 }
