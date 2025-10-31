@@ -1,3 +1,4 @@
+
 import type { Connection, TreeNode, SearchResult, TreeAKA } from '@/lib/types';
 
 // This file is now primarily for the data transformation logic.
@@ -10,10 +11,18 @@ export function getTrees(connections: Connection[], treeAKAs: TreeAKA = {}): { a
     treeNames.add(treeName);
   });
   
+  // Filter out the old tree names that have been renamed
   const oldTreeNames = Object.keys(treeAKAs);
   oldTreeNames.forEach(oldName => treeNames.delete(oldName));
 
   const sortedTrees = Array.from(treeNames).sort();
+
+  // Ensure '(None)' is at the bottom if it exists
+  if (sortedTrees.includes('(None)')) {
+    return {
+      allTrees: [...sortedTrees.filter(t => t !== '(None)'), '(None)'],
+    };
+  }
   
   return {
     allTrees: sortedTrees,
@@ -56,9 +65,18 @@ export function buildTree(
   connections: Connection[],
   treeName: string
 ): TreeNode[] {
+  // Find the original tree name if the current tree is an AKA
+  const treeAKAs = findTreeAKAs(connections);
+  const originalName = Object.keys(treeAKAs).find(key => treeAKAs[key] === treeName);
+
   const relevantConnections = connections.filter(
-    (c) => (c.treeName || '(None)') === treeName
+    (c) => {
+      const currentConnectionTree = c.treeName || '(None)';
+      // Include connections from the current tree OR its original, AKA tree
+      return currentConnectionTree === treeName || currentConnectionTree === originalName;
+    }
   );
+  
   if (relevantConnections.length === 0) return [];
 
   const nodes: { [key: string]: TreeNode } = {};
@@ -96,7 +114,7 @@ export function buildTree(
     }
   });
   
-  // Find root nodes (bytes who are never bits in THIS tree)
+  // Find root nodes (bytes who are never bits in THIS tree or the merged tree)
   const bitsInThisTree = new Set(relevantConnections.map(c => c.bit));
   const rootNodes = Object.values(nodes).filter(
     (node) => !bitsInThisTree.has(node.name)
