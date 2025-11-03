@@ -253,7 +253,7 @@ export function ConnectionForm({ currentTree, allPeople, connections, allTrees }
                       <Input placeholder="Enter name or create new" {...field} list="people-list" />
                     </FormControl>
                     <datalist id="people-list">
-                      {allPeopleNames.map(name => <option key={name} value={name} />)}
+                      {allPeopleNames.map((name, index) => <option key={`${name}-${index}`} value={name} />)}
                     </datalist>
                     <FormMessage />
                   </FormItem>
