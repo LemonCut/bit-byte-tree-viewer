@@ -5,16 +5,18 @@ import { collection, query, where, getDocs, writeBatch, type Firestore } from 'f
 // This file is now primarily for the data transformation logic.
 // The data itself will be managed in the component's state.
 
-export function getTrees(connections: Connection[], treeAKAs: TreeAKA = {}): { allTrees: string[] } {
+export function getTrees(connections: Connection[], treeAKAs: TreeAKA = {}, isAdmin: boolean = false): { allTrees: string[] } {
   const treeNames = new Set<string>();
   connections.forEach((c) => {
     const treeName = c.tree || '(None)';
     treeNames.add(treeName);
   });
   
-  // Filter out the old tree names that have been renamed
-  const oldTreeNames = Object.keys(treeAKAs);
-  oldTreeNames.forEach(oldName => treeNames.delete(oldName));
+  // In regular mode, filter out old tree names that have been renamed/merged
+  if (!isAdmin) {
+    const oldTreeNames = Object.keys(treeAKAs);
+    oldTreeNames.forEach(oldName => treeNames.delete(oldName));
+  }
 
   const sortedTrees = Array.from(treeNames).sort();
 

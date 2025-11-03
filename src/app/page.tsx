@@ -76,8 +76,8 @@ export default function Home() {
 
 
   const { allTrees } = useMemo(
-    () => (connections ? getTrees(connections, treeAKAs) : { allTrees: [] }),
-    [connections, treeAKAs]
+    () => (connections ? getTrees(connections, treeAKAs, isAdmin) : { allTrees: [] }),
+    [connections, treeAKAs, isAdmin]
   );
   
   const currentTreeName = treeParam || allTrees[0] || 'No Trees Found';
