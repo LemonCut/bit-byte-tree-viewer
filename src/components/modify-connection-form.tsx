@@ -4,7 +4,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -47,9 +47,9 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import type { Connection, Person } from '@/lib/types';
 import { useFirestore } from '@/firebase';
-import { collection, doc, writeBatch, deleteDoc } from 'firebase/firestore';
+import { collection, doc, writeBatch, query, where, getDocs, deleteDoc } from 'firebase/firestore';
 import { Pencil, Trash2 } from 'lucide-react';
-import { Separator } from './ui/separator';
+import { updatePersonNameInConnections } from '@/lib/data';
 
 const SearchSchema = z.object({
   personName: z.string().min(1, "Person's name is required."),
@@ -57,7 +57,8 @@ const SearchSchema = z.object({
 
 const ModifySchema = z.object({
   connectionId: z.string().optional(),
-  bitName: z.string(),
+  originalBitName: z.string(),
+  bitName: z.string().min(1, 'Bit name is required'),
   byteName: z.string().min(1, 'Byte name is required'),
   treeName: z.string().min(1, 'Tree name is required'),
   year: z.coerce
@@ -87,6 +88,19 @@ export function ModifyConnectionForm({ connections, allPeople }: ModifyConnectio
     const modifyForm = useForm<z.infer<typeof ModifySchema>>({
       resolver: zodResolver(ModifySchema),
     });
+    
+    useEffect(() => {
+        if (selectedConnection) {
+            modifyForm.reset({
+                connectionId: selectedConnection.id,
+                originalBitName: selectedConnection.bit,
+                bitName: selectedConnection.bit,
+                byteName: selectedConnection.byte,
+                treeName: selectedConnection.tree,
+                year: selectedConnection.year,
+            });
+        }
+    }, [selectedConnection, modifyForm]);
 
     const onSearch = (data: z.infer<typeof SearchSchema>) => {
       const connectionAsBit = connections.find(
@@ -103,38 +117,40 @@ export function ModifyConnectionForm({ connections, allPeople }: ModifyConnectio
       }
       
       setSelectedConnection(connectionAsBit);
-      
-      modifyForm.reset({
-        connectionId: connectionAsBit.id,
-        bitName: connectionAsBit.bit,
-        byteName: connectionAsBit.byte,
-        treeName: connectionAsBit.tree,
-        year: connectionAsBit.year,
-      });
-      
       setModifyDialogOpen(true);
     };
 
     async function onModify(data: z.infer<typeof ModifySchema>) {
       if (!firestore || !data.connectionId) return;
 
-      try {
-        const docRef = doc(firestore, 'connections', data.connectionId);
-        await writeBatch(firestore).update(docRef, {
-            byte: data.byteName,
-            tree: data.treeName,
-            year: data.year,
-        }).commit();
+      const batch = writeBatch(firestore);
 
+      // Handle name change
+      if (data.originalBitName !== data.bitName) {
+        await updatePersonNameInConnections(firestore, batch, data.originalBitName, data.bitName);
+      }
+      
+      // Update current connection details
+      const docRef = doc(firestore, 'connections', data.connectionId);
+      batch.update(docRef, {
+          byte: data.byteName,
+          tree: data.treeName,
+          year: data.year,
+          bit: data.bitName, // also update the bit name in the current connection
+      });
+
+      try {
+        await batch.commit();
         toast({
           title: 'Success!',
           description: `Connection for '${data.bitName}' has been updated.`,
         });
         setModifyDialogOpen(false);
         searchForm.reset();
+        setSelectedConnection(null);
 
       } catch (error) {
-        console.error('Error updating document: ', error);
+        console.error('Error updating document(s): ', error);
         toast({
           variant: 'destructive',
           title: 'Update Failed',
@@ -145,27 +161,41 @@ export function ModifyConnectionForm({ connections, allPeople }: ModifyConnectio
     
     const handleConfirmDelete = async () => {
       if (!firestore || !selectedConnection) return;
+      const personNameToDelete = selectedConnection.bit;
 
       try {
-        const docRef = doc(firestore, 'connections', selectedConnection.id);
-        await deleteDoc(docRef);
+        const batch = writeBatch(firestore);
+        const connectionsCollection = collection(firestore, 'connections');
+        
+        // Find all connections where the person is a bit
+        const bitQuery = query(connectionsCollection, where("bit", "==", personNameToDelete));
+        const bitQuerySnapshot = await getDocs(bitQuery);
+        bitQuerySnapshot.forEach(doc => batch.delete(doc.ref));
+
+        // Find all connections where the person is a byte
+        const byteQuery = query(connectionsCollection, where("byte", "==", personNameToDelete));
+        const byteQuerySnapshot = await getDocs(byteQuery);
+        byteQuerySnapshot.forEach(doc => batch.delete(doc.ref));
+
+        await batch.commit();
 
         toast({
           title: 'Success!',
-          description: `Connection for '${selectedConnection.bit}' has been deleted.`,
+          description: `'${personNameToDelete}' and all their connections have been removed.`,
         });
-        setModifyDialogOpen(false);
-        searchForm.reset();
+        
       } catch (error) {
-        console.error("Error removing document: ", error);
+        console.error("Error removing documents: ", error);
         toast({
           variant: 'destructive',
           title: 'Uh oh! Something went wrong.',
-          description: 'There was a problem deleting the connection.',
+          description: 'There was a problem removing the person.',
         });
       } finally {
         setDeleteWarningOpen(false);
+        setModifyDialogOpen(false);
         setSelectedConnection(null);
+        searchForm.reset();
       }
     };
 
@@ -177,9 +207,9 @@ export function ModifyConnectionForm({ connections, allPeople }: ModifyConnectio
       <>
         <Card className="bg-transparent border-none shadow-none">
           <CardHeader className="p-0 mb-4">
-            <CardTitle className="text-lg">Modify Bit Connection</CardTitle>
+            <CardTitle className="text-lg">Modify Bit</CardTitle>
             <CardDescription>
-              Find a bit to edit their connection details.
+              Find a bit to edit their name or connection details.
             </CardDescription>
           </CardHeader>
           <CardContent className="p-0">
@@ -216,14 +246,26 @@ export function ModifyConnectionForm({ connections, allPeople }: ModifyConnectio
             <DialogHeader>
               <DialogTitle>Modify Connection for {selectedConnection?.bit}</DialogTitle>
               <DialogDescription>
-                Edit the details of this bit's connection to their byte.
+                Edit the details of this bit's name or their connection to their byte.
               </DialogDescription>
             </DialogHeader>
             <Form {...modifyForm}>
               <form onSubmit={modifyForm.handleSubmit(onModify)} className="space-y-6 pt-4">
                 <ScrollArea className="max-h-[70vh] pr-4">
                   <div className="space-y-6">
-                    {/* Byte Details Section */}
+                     <div className="space-y-4 p-4 rounded-lg border">
+                        <h3 className="text-base font-semibold">Bit Details</h3>
+                        <FormField
+                            control={modifyForm.control}
+                            name="bitName"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Bit Name</FormLabel>
+                                    <FormControl><Input {...field} /></FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                        )} />
+                     </div>
                      <div className="space-y-4 p-4 rounded-lg border">
                         <h3 className="text-base font-semibold">Byte Details</h3>
                       {selectedConnection ? (
@@ -274,7 +316,7 @@ export function ModifyConnectionForm({ connections, allPeople }: ModifyConnectio
                 
                 <DialogFooter className="pt-6 border-t sm:justify-between">
                     <Button type="button" variant="destructive" onClick={() => setDeleteWarningOpen(true)}>
-                        <Trash2 className="mr-2 h-4 w-4" /> Delete Connection
+                        <Trash2 className="mr-2 h-4 w-4" /> Remove Bit
                     </Button>
                     <div className="flex gap-2">
                          <DialogClose asChild>
@@ -294,7 +336,7 @@ export function ModifyConnectionForm({ connections, allPeople }: ModifyConnectio
             <AlertDialogHeader>
               <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
               <AlertDialogDescription>
-                This will permanently delete the connection between '{selectedConnection?.bit}' and '{selectedConnection?.byte}'. This action cannot be undone.
+                This will permanently delete '{selectedConnection?.bit}' and all of their connections from the database. This action cannot be undone.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -303,7 +345,7 @@ export function ModifyConnectionForm({ connections, allPeople }: ModifyConnectio
                 onClick={handleConfirmDelete}
                 className="bg-destructive hover:bg-destructive/90"
               >
-                Confirm & Delete
+                Confirm & Remove Bit
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

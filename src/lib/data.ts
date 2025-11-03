@@ -1,5 +1,6 @@
 
 import type { Connection, TreeNode, SearchResult, TreeAKA, Person } from '@/lib/types';
+import { collection, query, where, getDocs, writeBatch, type Firestore } from 'firebase/firestore';
 
 // This file is now primarily for the data transformation logic.
 // The data itself will be managed in the component's state.
@@ -278,3 +279,21 @@ export function findTreeAKAs(connections: Connection[]): TreeAKA {
 export const generateId = (): string => {
     return Math.floor(100000 + Math.random() * 900000).toString();
 };
+
+export async function updatePersonNameInConnections(firestore: Firestore, batch: any, oldName: string, newName: string) {
+  const connectionsCollection = collection(firestore, 'connections');
+
+  // Find all connections where the person is a 'bit'
+  const bitQuery = query(connectionsCollection, where("bit", "==", oldName));
+  const bitQuerySnapshot = await getDocs(bitQuery);
+  bitQuerySnapshot.forEach(doc => {
+    batch.update(doc.ref, { bit: newName });
+  });
+
+  // Find all connections where the person is a 'byte'
+  const byteQuery = query(connectionsCollection, where("byte", "==", oldName));
+  const byteQuerySnapshot = await getDocs(byteQuery);
+  byteQuerySnapshot.forEach(doc => {
+    batch.update(doc.ref, { byte: newName });
+  });
+}
