@@ -385,7 +385,7 @@ export function ModifyConnectionForm({ connections, allPeople }: ModifyConnectio
                     
                     {/* As a Bit Section */}
                     <div className="space-y-4 p-4 rounded-lg border">
-                      <h4 className="text-sm font-medium text-muted-foreground">As a Bit (Child)</h4>
+                      <h4 className="text-sm font-medium text-muted-foreground">As a Bit</h4>
                       {modifyForm.getValues('asBitConnection') ? (
                          <>
                           <FormField
@@ -393,7 +393,7 @@ export function ModifyConnectionForm({ connections, allPeople }: ModifyConnectio
                             name="asBitConnection.byte"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Byte Name (Parent)</FormLabel>
+                                    <FormLabel>Byte Name</FormLabel>
                                     <FormControl><Input {...field} list="all-people-list" /></FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -430,7 +430,7 @@ export function ModifyConnectionForm({ connections, allPeople }: ModifyConnectio
                     {/* As a Byte Section */}
                      <div className="space-y-4 p-4 rounded-lg border">
                         <div className="flex justify-between items-center">
-                            <h4 className="text-sm font-medium text-muted-foreground">As a Byte (Parent)</h4>
+                            <h4 className="text-sm font-medium text-muted-foreground">As a Byte</h4>
                              <Button type="button" size="sm" variant="ghost" onClick={handleAddBit}>
                                 <Plus className="mr-2 h-4 w-4" /> Add Bit
                             </Button>
@@ -454,7 +454,7 @@ export function ModifyConnectionForm({ connections, allPeople }: ModifyConnectio
                                 name={`asByteConnections.${index}.bit`}
                                 render={({ field: formField }) => (
                                     <FormItem>
-                                        <FormLabel>Bit Name (Child)</FormLabel>
+                                        <FormLabel>Bit Name</FormLabel>
                                         <FormControl><Input {...formField} list="all-people-list" /></FormControl>
                                         <FormMessage />
                                     </FormItem>
