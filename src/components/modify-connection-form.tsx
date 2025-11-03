@@ -1,10 +1,10 @@
 
 'use client';
 
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -47,8 +47,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import type { Connection, Person } from '@/lib/types';
 import { useFirestore } from '@/firebase';
-import { collection, doc, writeBatch, query, where, getDocs } from 'firebase/firestore';
-import { Pencil, Trash2 } from 'lucide-react';
+import { collection, doc, writeBatch, query, where, getDocs, addDoc, deleteDoc } from 'firebase/firestore';
+import { Pencil, Trash2, Plus, X } from 'lucide-react';
 import { Separator } from './ui/separator';
 
 const SearchSchema = z.object({
@@ -58,10 +58,20 @@ const SearchSchema = z.object({
 const ModifySchema = z.object({
   originalName: z.string(),
   newName: z.string().min(1, "Person's name cannot be empty."),
-  connections: z.array(z.object({
+  // Connection where this person is the BIT
+  asBitConnection: z.object({
+    id: z.string().optional(),
+    byte: z.string().min(1, "Byte name is required"),
+    tree: z.string().min(1, "Tree name is required"),
+    year: z.coerce
+      .number()
+      .min(1900, 'Please enter a valid year.')
+      .max(new Date().getFullYear() + 1, 'Year cannot be in the distant future.'),
+  }).nullable(),
+  // Connections where this person is the BYTE
+  asByteConnections: z.array(z.object({
     id: z.string(),
-    bit: z.string(),
-    byte: z.string(),
+    bit: z.string().min(1, "Bit name is required"),
     tree: z.string().min(1, 'Tree name is required.'),
     year: z.coerce
       .number()
@@ -69,6 +79,7 @@ const ModifySchema = z.object({
       .max(new Date().getFullYear() + 1, 'Year cannot be in the distant future.'),
   })),
 });
+
 
 type ModifyConnectionFormProps = {
   connections: Connection[];
@@ -80,6 +91,7 @@ export function ModifyConnectionForm({ connections, allPeople }: ModifyConnectio
     const firestore = useFirestore();
     const [modifyDialogOpen, setModifyDialogOpen] = useState(false);
     const [removeWarningOpen, setRemoveWarningOpen] = useState(false);
+    const [removeBitWarning, setRemoveBitWarning] = useState<{connectionId: string, bitName: string} | null>(null);
     const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
 
     const searchForm = useForm<z.infer<typeof SearchSchema>>({
@@ -89,12 +101,21 @@ export function ModifyConnectionForm({ connections, allPeople }: ModifyConnectio
 
     const modifyForm = useForm<z.infer<typeof ModifySchema>>({
       resolver: zodResolver(ModifySchema),
+      defaultValues: {
+        originalName: '',
+        newName: '',
+        asBitConnection: null,
+        asByteConnections: []
+      }
     });
 
-    const { fields, replace } = useFieldArray({
+    const { fields: asByteFields, append: appendAsByte, remove: removeAsByte } = useFieldArray({
       control: modifyForm.control,
-      name: 'connections',
+      name: 'asByteConnections',
     });
+    
+    // Watch for changes to the form data to keep UI interactive
+    const watchedNewName = modifyForm.watch('newName');
 
     const onSearch = (data: z.infer<typeof SearchSchema>) => {
       const person = allPeople.find(
@@ -109,64 +130,80 @@ export function ModifyConnectionForm({ connections, allPeople }: ModifyConnectio
         });
         return;
       }
-
-      const relatedConnections = connections.filter(
-        (c) => c.bit === person.name || c.byte === person.name
-      );
+      
+      const connectionAsBit = connections.find(c => c.bit === person.name) || null;
+      const connectionsAsByte = connections.filter(c => c.byte === person.name);
 
       setSelectedPerson(person);
+      
       modifyForm.reset({
         originalName: person.name,
         newName: person.name,
+        asBitConnection: connectionAsBit ? {
+            id: connectionAsBit.id,
+            byte: connectionAsBit.byte,
+            tree: connectionAsBit.tree,
+            year: connectionAsBit.year
+        } : null,
+        asByteConnections: connectionsAsByte.map(c => ({
+            id: c.id,
+            bit: c.bit,
+            tree: c.tree,
+            year: c.year
+        }))
       });
-      replace(relatedConnections);
+      
       setModifyDialogOpen(true);
     };
 
     async function onModify(data: z.infer<typeof ModifySchema>) {
       if (!firestore || !selectedPerson) return;
-
-      const { originalName, newName, connections: modifiedConnections } = data;
-
+      const { originalName, newName, asBitConnection, asByteConnections } = data;
+      
       try {
         const batch = writeBatch(firestore);
 
+        // 1. Handle name change across all connections
         if (originalName !== newName) {
-          // Update name where the person is a 'bit'
           const bitQuery = query(collection(firestore, 'connections'), where('bit', '==', originalName));
-          const bitQuerySnapshot = await getDocs(bitQuery);
-          bitQuerySnapshot.forEach((doc) => {
-            batch.update(doc.ref, { bit: newName });
-          });
+          const bitDocs = await getDocs(bitQuery);
+          bitDocs.forEach(d => batch.update(d.ref, { bit: newName }));
 
-          // Update name where the person is a 'byte'
           const byteQuery = query(collection(firestore, 'connections'), where('byte', '==', originalName));
-          const byteQuerySnapshot = await getDocs(byteQuery);
-          byteQuerySnapshot.forEach((doc) => {
-            batch.update(doc.ref, { byte: newName });
-          });
+          const byteDocs = await getDocs(byteQuery);
+          byteDocs.forEach(d => batch.update(d.ref, { byte: newName }));
         }
 
-        // Update individual connections from the form
-        modifiedConnections.forEach(conn => {
-          const docRef = doc(firestore, 'connections', conn.id);
-          const originalConnection = connections.find(c => c.id === conn.id);
-
-          if (originalConnection) {
-            const updatedData: Partial<Connection> = {};
-            if (originalConnection.tree !== conn.tree) updatedData.tree = conn.tree;
-            if (originalConnection.year !== conn.year) updatedData.year = conn.year;
-
-            // Re-check names in case they were changed
-            const finalBit = conn.bit === originalName ? newName : conn.bit;
-            const finalByte = conn.byte === originalName ? newName : conn.byte;
-            if (originalConnection.bit !== finalBit) updatedData.bit = finalBit;
-            if (originalConnection.byte !== finalByte) updatedData.byte = finalByte;
-
-            if (Object.keys(updatedData).length > 0) {
-              batch.update(docRef, updatedData);
+        // 2. Handle update to the connection where person is a bit
+        if (asBitConnection?.id) {
+             const docRef = doc(firestore, 'connections', asBitConnection.id);
+             batch.update(docRef, {
+                 byte: asBitConnection.byte,
+                 tree: asBitConnection.tree,
+                 year: asBitConnection.year
+             });
+        }
+        
+        // 3. Handle updates to connections where person is a byte
+        asByteConnections.forEach(conn => {
+            const originalConn = connections.find(c => c.id === conn.id);
+            // If it's an existing connection, update it
+            if (originalConn) {
+                const docRef = doc(firestore, 'connections', conn.id);
+                batch.update(docRef, {
+                    bit: conn.bit,
+                    tree: conn.tree,
+                    year: conn.year
+                });
+            } else { // This is a newly added bit
+                const newDocRef = doc(collection(firestore, 'connections'));
+                batch.set(newDocRef, {
+                    bit: conn.bit,
+                    byte: newName, // Use the new name if it was changed
+                    tree: conn.tree,
+                    year: conn.year
+                });
             }
-          }
         });
 
         await batch.commit();
@@ -188,7 +225,58 @@ export function ModifyConnectionForm({ connections, allPeople }: ModifyConnectio
       }
     }
 
-    const handleConfirmDelete = async () => {
+    const handleAddBit = () => {
+      appendAsByte({
+        // @ts-ignore - ID is generated by firestore, so we use a temp client-side one
+        id: `new-${Date.now()}`,
+        bit: '',
+        tree: modifyForm.getValues('asByteConnections.0.tree') || '',
+        year: new Date().getFullYear(),
+      });
+    };
+
+    const handleDeleteBit = async () => {
+      if (!firestore || !removeBitWarning) return;
+      
+      const { connectionId, bitName } = removeBitWarning;
+      
+      // If it's a new bit not yet in the DB, just remove from form state
+      if (connectionId.startsWith('new-')) {
+          const fieldIndex = asByteFields.findIndex(field => field.id === connectionId);
+          if (fieldIndex > -1) {
+              removeAsByte(fieldIndex);
+          }
+          toast({ title: 'Success!', description: 'New bit removed from form.' });
+          setRemoveBitWarning(null);
+          return;
+      }
+      
+      try {
+        const docRef = doc(firestore, 'connections', connectionId);
+        await deleteDoc(docRef);
+
+        const fieldIndex = asByteFields.findIndex(field => field.id === connectionId);
+        if (fieldIndex > -1) {
+            removeAsByte(fieldIndex);
+        }
+        
+        toast({
+          title: 'Success!',
+          description: `Connection to bit '${bitName}' has been deleted.`,
+        });
+      } catch (error) {
+        console.error("Error removing document: ", error);
+        toast({
+          variant: 'destructive',
+          title: 'Deletion Failed',
+          description: `Could not delete connection to '${bitName}'.`,
+        });
+      } finally {
+        setRemoveBitWarning(null);
+      }
+    };
+    
+    const handleConfirmDeletePerson = async () => {
       if (!firestore || !selectedPerson) return;
       const personToDelete = selectedPerson.name;
 
@@ -197,11 +285,11 @@ export function ModifyConnectionForm({ connections, allPeople }: ModifyConnectio
 
         const bitQuery = query(collection(firestore, 'connections'), where('bit', '==', personToDelete));
         const bitQuerySnapshot = await getDocs(bitQuery);
-        bitQuerySnapshot.forEach((doc) => batch.delete(doc.ref));
+        bitQuerySnapshot.forEach((d) => batch.delete(d.ref));
 
         const byteQuery = query(collection(firestore, 'connections'), where('byte', '==', personToDelete));
         const byteQuerySnapshot = await getDocs(byteQuery);
-        byteQuerySnapshot.forEach((doc) => batch.delete(doc.ref));
+        byteQuerySnapshot.forEach((d) => batch.delete(d.ref));
 
         await batch.commit();
 
@@ -224,8 +312,8 @@ export function ModifyConnectionForm({ connections, allPeople }: ModifyConnectio
       }
     };
 
-    const allPeopleNames = useMemo(() => allPeople.map(p => p.name), [allPeople]);
-    const allTrees = useMemo(() => Array.from(new Set(connections.map(c => c.tree || ''))).filter(Boolean), [connections]);
+    const allPeopleNames = useMemo(() => allPeople.map(p => p.name).sort(), [allPeople]);
+    const allTrees = useMemo(() => Array.from(new Set(connections.map(c => c.tree || ''))).filter(Boolean).sort(), [connections]);
 
     return (
       <>
@@ -266,89 +354,156 @@ export function ModifyConnectionForm({ connections, allPeople }: ModifyConnectio
         </Card>
 
         <Dialog open={modifyDialogOpen} onOpenChange={setModifyDialogOpen}>
-          <DialogContent className="sm:max-w-[425px] md:max-w-[600px]">
+          <DialogContent className="max-w-lg">
             <DialogHeader>
               <DialogTitle>Modify Details for {selectedPerson?.name}</DialogTitle>
               <DialogDescription>
-                Edit name and connection details. Name changes will apply to all records.
+                Edit name and connection details. Changes will apply to all records.
               </DialogDescription>
             </DialogHeader>
             <Form {...modifyForm}>
-              <form onSubmit={modifyForm.handleSubmit(onModify)} className="space-y-4 pt-4">
-                <FormField
-                  control={modifyForm.control}
-                  name="newName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Person's New Name</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Separator />
-                <h4 className="text-sm font-medium">Connections</h4>
-                <ScrollArea className="max-h-[40vh]">
-                  <div className="p-1 space-y-4">
-                    {fields.map((field, index) => (
-                      <div key={field.id} className="space-y-4 p-4 rounded-lg border">
-                        <p className="text-sm font-medium text-muted-foreground">
-                          {field.bit === selectedPerson?.name
-                            ? `Bit to ${field.byte}`
-                            : `Byte for ${field.bit}`
-                          } in <span className="text-foreground font-semibold">{field.tree}</span>
-                        </p>
-                        <FormField
-                          control={modifyForm.control}
-                          name={`connections.${index}.tree`}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Tree Name</FormLabel>
-                              <FormControl>
-                                <Input {...field} list="all-trees-list" />
-                              </FormControl>
-                              <datalist id="all-trees-list">
-                                {allTrees.map((tree) => (
-                                  <option key={tree} value={tree} />
-                                ))}
-                              </datalist>
-                              <FormMessage />
-                            </FormItem>
-                          )} />
-                        <FormField
-                          control={modifyForm.control}
-                          name={`connections.${index}.year`}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Year of Pickup</FormLabel>
-                              <FormControl>
-                                <Input type="number" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )} />
-                      </div>
-                    ))}
+              <form onSubmit={modifyForm.handleSubmit(onModify)} className="space-y-6 pt-4">
+                <ScrollArea className="max-h-[70vh] pr-4">
+                  <div className="space-y-6">
+                    {/* Name Section */}
+                    <FormField
+                      control={modifyForm.control}
+                      name="newName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-base font-semibold">Name</FormLabel>
+                          <FormControl><Input {...field} /></FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <Separator />
+
+                    {/* Connections Section */}
+                    <h3 className="text-base font-semibold">Connections</h3>
+                    
+                    {/* As a Bit Section */}
+                    <div className="space-y-4 p-4 rounded-lg border">
+                      <h4 className="text-sm font-medium text-muted-foreground">As a Bit (Child)</h4>
+                      {modifyForm.getValues('asBitConnection') ? (
+                         <>
+                          <FormField
+                            control={modifyForm.control}
+                            name="asBitConnection.byte"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Byte Name (Parent)</FormLabel>
+                                    <FormControl><Input {...field} list="all-people-list" /></FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )} />
+                           <FormField
+                            control={modifyForm.control}
+                            name="asBitConnection.tree"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Tree Name</FormLabel>
+                                    <FormControl><Input {...field} list="all-trees-list" /></FormControl>
+                                    <datalist id="all-trees-list">
+                                      {allTrees.map(tree => <option key={tree} value={tree} />)}
+                                    </datalist>
+                                    <FormMessage />
+                                </FormItem>
+                            )} />
+                           <FormField
+                            control={modifyForm.control}
+                            name="asBitConnection.year"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Year of Pickup</FormLabel>
+                                    <FormControl><Input type="number" {...field} /></FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )} />
+                         </>
+                      ) : (
+                        <p className="text-sm text-muted-foreground italic">N/A (This person is a root byte)</p>
+                      )}
+                    </div>
+
+                    {/* As a Byte Section */}
+                     <div className="space-y-4 p-4 rounded-lg border">
+                        <div className="flex justify-between items-center">
+                            <h4 className="text-sm font-medium text-muted-foreground">As a Byte (Parent)</h4>
+                             <Button type="button" size="sm" variant="ghost" onClick={handleAddBit}>
+                                <Plus className="mr-2 h-4 w-4" /> Add Bit
+                            </Button>
+                        </div>
+                       {asByteFields.length === 0 ? (
+                           <p className="text-sm text-muted-foreground italic">N/A (This person has no bits)</p>
+                       ) : (
+                         asByteFields.map((field, index) => (
+                           <div key={field.id} className="space-y-3 p-3 rounded-md border bg-muted/20 relative">
+                             <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="absolute top-1 right-1 h-6 w-6"
+                                onClick={() => setRemoveBitWarning({ connectionId: field.id, bitName: modifyForm.getValues(`asByteConnections.${index}.bit`) || 'new bit'})}
+                              >
+                               <X className="h-4 w-4" />
+                             </Button>
+                             <FormField
+                                control={modifyForm.control}
+                                name={`asByteConnections.${index}.bit`}
+                                render={({ field: formField }) => (
+                                    <FormItem>
+                                        <FormLabel>Bit Name (Child)</FormLabel>
+                                        <FormControl><Input {...formField} list="all-people-list" /></FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+                              <FormField
+                                control={modifyForm.control}
+                                name={`asByteConnections.${index}.tree`}
+                                render={({ field: formField }) => (
+                                    <FormItem>
+                                        <FormLabel>Tree Name</FormLabel>
+                                        <FormControl><Input {...formField} list="all-trees-list" /></FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+                               <FormField
+                                control={modifyForm.control}
+                                name={`asByteConnections.${index}.year`}
+                                render={({ field: formField }) => (
+                                    <FormItem>
+                                        <FormLabel>Year of Pickup</FormLabel>
+                                        <FormControl><Input type="number" {...formField} /></FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+                           </div>
+                         ))
+                       )}
+                     </div>
+
                   </div>
                 </ScrollArea>
-                <Button type="submit" className="w-full">Save All Changes</Button>
+                
+                <DialogFooter className="pt-6 border-t sm:justify-between">
+                    <Button type="button" variant="destructive" onClick={() => setRemoveWarningOpen(true)}>
+                        <Trash2 className="mr-2 h-4 w-4" /> Remove {watchedNewName}
+                    </Button>
+                    <div className="flex gap-2">
+                         <DialogClose asChild>
+                           <Button type="button" variant="secondary">Cancel</Button>
+                         </DialogClose>
+                         <Button type="submit">Save Changes</Button>
+                    </div>
+                </DialogFooter>
               </form>
             </Form>
-            <DialogFooter className="sm:justify-between mt-4">
-              <Button variant="destructive" onClick={() => setRemoveWarningOpen(true)}>
-                <Trash2 className="mr-2 h-4 w-4" /> Remove {selectedPerson?.name}
-              </Button>
-              <DialogClose asChild>
-                <Button type="button" variant="secondary">
-                  Close
-                </Button>
-              </DialogClose>
-            </DialogFooter>
           </DialogContent>
         </Dialog>
 
+        {/* Confirmation for removing a person */}
         <AlertDialog open={removeWarningOpen} onOpenChange={setRemoveWarningOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>
@@ -361,7 +516,7 @@ export function ModifyConnectionForm({ connections, allPeople }: ModifyConnectio
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction
-                onClick={handleConfirmDelete}
+                onClick={handleConfirmDeletePerson}
                 className="bg-destructive hover:bg-destructive/90"
               >
                 Confirm & Delete
@@ -369,6 +524,29 @@ export function ModifyConnectionForm({ connections, allPeople }: ModifyConnectio
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Confirmation for removing a single bit connection */}
+        <AlertDialog open={!!removeBitWarning} onOpenChange={(open) => !open && setRemoveBitWarning(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Bit Connection?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete the connection to '{removeBitWarning?.bitName}'? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setRemoveBitWarning(null)}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteBit}
+                className="bg-destructive hover:bg-destructive/90"
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </>
     );
 }
+
+    
