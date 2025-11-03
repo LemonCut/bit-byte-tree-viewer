@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useFormState, useFormStatus } from 'react-dom';
+import { useState, useEffect, useActionState } from 'react';
+import { useFormStatus } from 'react-dom';
 import { Unlock } from 'lucide-react';
 import { Button } from './ui/button';
 import {
@@ -17,7 +17,6 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { verifyAdminPassword } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
-import { useEffect } from 'react';
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -32,7 +31,7 @@ export function AdminUnlock({ onUnlock }: { onUnlock: () => void }) {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
 
-  const [state, formAction] = useFormState(verifyAdminPassword, {
+  const [state, formAction] = useActionState(verifyAdminPassword, {
     success: false,
     message: '',
   });
