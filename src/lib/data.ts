@@ -15,7 +15,13 @@ export function getTrees(connections: Connection[], treeAKAs: TreeAKA = {}, isAd
   // In regular mode, filter out old tree names that have been renamed/merged
   if (!isAdmin) {
     const oldTreeNames = Object.keys(treeAKAs);
-    oldTreeNames.forEach(oldName => treeNames.delete(oldName));
+    const canonicalTreeNames = new Set(Object.values(treeAKAs));
+    oldTreeNames.forEach(oldName => {
+      // Only remove the old name if it's not also a canonical name for another tree
+      if (!canonicalTreeNames.has(oldName)) {
+        treeNames.delete(oldName);
+      }
+    });
   }
 
   const sortedTrees = Array.from(treeNames).sort();
