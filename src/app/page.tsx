@@ -17,7 +17,7 @@ import { buildTree, getTrees, getAllPeople, findTreeAKAs } from '@/lib/data';
 import { TreeSelector } from '@/components/tree-selector';
 import { ConnectionForm } from '@/components/connection-form';
 import { DataManagement } from '@/components/data-management';
-import { ModifyConnectionForm, type ModifyConnectionFormHandle } from '@/components/modify-connection-form';
+import { ModifyConnectionForm } from '@/components/modify-connection-form';
 import { OrgChart } from '@/components/org-chart';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -49,8 +49,6 @@ export default function Home() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [shuffledTreeData, setShuffledTreeData] = useState<TreeNode[] | null>(null);
   
-  const modifyFormRef = React.useRef<ModifyConnectionFormHandle>(null);
-
   const connectionsQuery = useMemoFirebase(
     () => (firestore ? collection(firestore, 'connections') : null),
     [firestore]
@@ -118,12 +116,6 @@ export default function Home() {
     setIsAdmin(!isAdmin);
   };
   
-  const handleNodeSelect = useCallback((personName: string) => {
-    if (isAdmin && modifyFormRef.current) {
-        modifyFormRef.current.searchAndOpen(personName);
-    }
-  }, [isAdmin]);
-
   if (isAdmin) {
     return (
       <SidebarProvider>
@@ -150,7 +142,7 @@ export default function Home() {
             </SidebarGroup>
             <Separator />
             <SidebarGroup>
-                <ModifyConnectionForm ref={modifyFormRef} connections={connections || []} allPeople={allPeople} />
+                <ModifyConnectionForm connections={connections || []} allPeople={allPeople} />
             </SidebarGroup>
             <Separator />
             <SidebarGroup>
@@ -197,8 +189,6 @@ export default function Home() {
                 treeData={shuffledTreeData} 
                 currentTreeName={currentTreeName} 
                 treeParam={treeParam}
-                onNodeSelect={handleNodeSelect}
-                isAdmin={isAdmin}
               />
             </div>
           </main>
@@ -239,8 +229,6 @@ export default function Home() {
                 treeData={shuffledTreeData} 
                 currentTreeName={currentTreeName} 
                 treeParam={treeParam}
-                onNodeSelect={handleNodeSelect}
-                isAdmin={isAdmin}
             />
           </div>
         </main>
@@ -250,7 +238,7 @@ export default function Home() {
   );
 }
 
-const OrgChartWrapper = ({ loading, connections, treeData, currentTreeName, treeParam, onNodeSelect, isAdmin }: { loading: boolean, connections: Connection[] | null, treeData: TreeNode[] | null, currentTreeName: string, treeParam: string | null, onNodeSelect: (personName: string) => void, isAdmin: boolean }) => {
+const OrgChartWrapper = ({ loading, connections, treeData, currentTreeName, treeParam }: { loading: boolean, connections: Connection[] | null, treeData: TreeNode[] | null, currentTreeName: string, treeParam: string | null }) => {
   if (!treeParam && !loading) {
     return (
        <div className="flex items-center justify-center h-full">
@@ -301,8 +289,6 @@ const OrgChartWrapper = ({ loading, connections, treeData, currentTreeName, tree
         <OrgChart 
             data={treeData} 
             currentTreeName={currentTreeName} 
-            onNodeSelect={onNodeSelect}
-            isAdmin={isAdmin}
         />
       )}
       {treeData.length === 0 && treeParam && (

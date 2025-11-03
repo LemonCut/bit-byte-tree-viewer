@@ -3,16 +3,13 @@
 
 import { Chart } from 'react-google-charts';
 import type { TreeNode } from '@/lib/types';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from './ui/button';
-import { ZoomIn, ZoomOut, Pencil } from 'lucide-react';
-import type { GoogleChartWrapper, GoogleChartEditor } from 'react-google-charts';
+import { ZoomIn, ZoomOut } from 'lucide-react';
 
 interface OrgChartProps {
   data: TreeNode[];
   currentTreeName: string;
-  onNodeSelect: (personName: string) => void;
-  isAdmin: boolean;
 }
 
 // Function to convert our tree data into the format Google Charts expects
@@ -59,18 +56,15 @@ function formatDataForGoogleChart(
   return chartData;
 }
 
-export function OrgChart({ data, currentTreeName, onNodeSelect, isAdmin }: OrgChartProps) {
+export function OrgChart({ data, currentTreeName }: OrgChartProps) {
   const [chartData, setChartData] = useState<
     (string | { v: string; f: string } | null)[][]
   >([]);
   const [zoom, setZoom] = useState(1);
-  const chartWrapperRef = useRef<GoogleChartWrapper>(null);
-  const [selectedNode, setSelectedNode] = useState<{name: string, boundingBox: {top: number, left: number, width: number, height: number}} | null>(null);
-
+  
   useEffect(() => {
     if (data && data.length > 0) {
       setChartData(formatDataForGoogleChart(data));
-      setSelectedNode(null); // Deselect node when data changes
     } else {
       setChartData([]);
     }
@@ -83,37 +77,6 @@ export function OrgChart({ data, currentTreeName, onNodeSelect, isAdmin }: OrgCh
     return null;
   }
   
-  const chartEvents = [
-    {
-        eventName: 'select' as const,
-        callback: ({ chartWrapper }: { chartWrapper: GoogleChartWrapper }) => {
-            if (!isAdmin) return;
-
-            const chart = chartWrapper.getChart();
-            const selection = chart.getSelection();
-
-            if (selection.length > 0) {
-                const selectedRow = selection[0].row;
-                if (selectedRow !== null && selectedRow !== undefined) {
-                    const dataTable = chartWrapper.getDataTable();
-                    if (dataTable) {
-                        const personId = dataTable.getValue(selectedRow, 0);
-                        const cli = chartWrapper.getChartLayoutInterface();
-                        const boundingBox = cli.getBoundingBox(`bar#0#${selectedRow}`);
-                        
-                        setSelectedNode({
-                            name: personId,
-                            boundingBox: boundingBox,
-                        });
-                    }
-                }
-            } else {
-                 setSelectedNode(null);
-            }
-        },
-    },
-  ];
-
   return (
     <div className="relative w-full h-full">
         <div className="absolute bottom-4 right-4 z-10 flex flex-col gap-2">
@@ -126,23 +89,8 @@ export function OrgChart({ data, currentTreeName, onNodeSelect, isAdmin }: OrgCh
                 <span className="sr-only">Zoom Out</span>
             </Button>
         </div>
-      <div className="w-full h-full overflow-auto" id="chart-container">
-        <div style={{ transform: `scale(${zoom})`, transformOrigin: 'top left', width: `${100 / zoom}%`, height: `${100 / zoom}%`, position: 'relative' }}>
-            {isAdmin && selectedNode && (
-                 <Button
-                    variant="outline"
-                    size="icon"
-                    className="absolute z-20 h-8 w-8"
-                    style={{
-                        top: `${selectedNode.boundingBox.top - 40}px`,
-                        left: `${selectedNode.boundingBox.left + (selectedNode.boundingBox.width / 2) - 16}px`,
-                    }}
-                    onClick={() => onNodeSelect(selectedNode.name)}
-                >
-                    <Pencil className="h-4 w-4" />
-                    <span className="sr-only">Modify Person</span>
-                </Button>
-            )}
+      <div className="w-full h-full overflow-auto">
+        <div style={{ transform: `scale(${zoom})`, transformOrigin: 'top left', width: `${100 / zoom}%`, height: `${100 / zoom}%` }}>
             <Chart
                 chartType="OrgChart"
                 data={chartData}
@@ -153,12 +101,6 @@ export function OrgChart({ data, currentTreeName, onNodeSelect, isAdmin }: OrgCh
                     nodeClass: 'google-chart-node',
                     selectedNodeClass: 'google-chart-node-selected',
                     size: 'large', // Ensures the nodes are large enough to be readable
-                }}
-                chartEvents={chartEvents}
-                chartWrapperParams={{
-                    // This is needed to get layout interface
-                    chartType: 'OrgChart',
-                    containerId: 'chart-container',
                 }}
             />
         </div>

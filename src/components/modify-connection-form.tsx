@@ -1,10 +1,10 @@
 
 'use client';
 
-import React, { useForm, useFieldArray } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useState, useMemo, forwardRef, useImperativeHandle } from 'react';
+import { useState, useMemo } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -75,12 +75,7 @@ type ModifyConnectionFormProps = {
   allPeople: Person[];
 };
 
-export type ModifyConnectionFormHandle = {
-  searchAndOpen: (personName: string) => void;
-};
-
-export const ModifyConnectionForm = forwardRef<ModifyConnectionFormHandle, ModifyConnectionFormProps>(
-  ({ connections, allPeople }, ref) => {
+export function ModifyConnectionForm({ connections, allPeople }: ModifyConnectionFormProps) {
     const { toast } = useToast();
     const firestore = useFirestore();
     const [modifyDialogOpen, setModifyDialogOpen] = useState(false);
@@ -102,19 +97,15 @@ export const ModifyConnectionForm = forwardRef<ModifyConnectionFormHandle, Modif
     });
 
     const onSearch = (data: z.infer<typeof SearchSchema>) => {
-      searchAndOpen(data.personName);
-    };
-
-    const searchAndOpen = (personName: string) => {
       const person = allPeople.find(
-        (p) => p.name.toLowerCase() === personName.toLowerCase()
+        (p) => p.name.toLowerCase() === data.personName.toLowerCase()
       );
 
       if (!person) {
         toast({
           variant: 'destructive',
           title: 'Not Found',
-          description: `No person named '${personName}' found.`,
+          description: `No person named '${data.personName}' found.`,
         });
         return;
       }
@@ -131,10 +122,6 @@ export const ModifyConnectionForm = forwardRef<ModifyConnectionFormHandle, Modif
       replace(relatedConnections);
       setModifyDialogOpen(true);
     };
-    
-    useImperativeHandle(ref, () => ({
-        searchAndOpen,
-    }));
 
     async function onModify(data: z.infer<typeof ModifySchema>) {
       if (!firestore || !selectedPerson) return;
@@ -384,7 +371,4 @@ export const ModifyConnectionForm = forwardRef<ModifyConnectionFormHandle, Modif
         </AlertDialog>
       </>
     );
-  }
-);
-
-ModifyConnectionForm.displayName = 'ModifyConnectionForm';
+}
