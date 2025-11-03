@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -98,7 +99,7 @@ export function SearchDialog({ connections }: SearchDialogProps) {
                           >
                               {conn.isRoot
                               ? `${conn.treeName} Tree - Root Byte`
-                              : `${conn.treeName} Tree - ${conn.year} - ${conn.byte}'s Bit`}
+                              : `${conn.treeName} Tree - ${conn.year} - ${conn.otherPersonName}'s Bit`}
                           </Link>
                         </li>
                       ))}

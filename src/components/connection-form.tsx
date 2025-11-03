@@ -9,13 +9,6 @@ import { useEffect, useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
   Form,
   FormControl,
   FormDescription,
@@ -43,15 +36,14 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import type { Connection, Person } from '@/lib/types';
-import { findBitInOtherTrees, generateId } from '@/lib/data';
+import { findBitInOtherTrees } from '@/lib/data';
 import { useFirestore } from '@/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 const FormSchema = z.object({
-  byteName: z.string().min(1, 'Byte name is required.'),
-  byteId: z.string().optional(),
-  bitName: z.string().min(1, 'Bit name is required.'),
-  treeName: z.string(), // can be empty
+  byte: z.string().min(1, 'Byte name is required.'),
+  bit: z.string().min(1, 'Bit name is required.'),
+  tree: z.string(), // can be empty
   year: z.coerce
     .number()
     .min(1900, 'Please enter a valid year.')
@@ -65,10 +57,9 @@ type ConnectionFormProps = {
   currentTree: string;
   allPeople: Person[];
   connections: Connection[];
-  allTrees: string[];
 };
 
-export function ConnectionForm({ currentTree, allPeople, connections, allTrees }: ConnectionFormProps) {
+export function ConnectionForm({ currentTree, allPeople, connections }: ConnectionFormProps) {
   const { toast } = useToast();
   const firestore = useFirestore();
   const [warningOpen, setWarningOpen] = useState(false);
@@ -79,31 +70,12 @@ export function ConnectionForm({ currentTree, allPeople, connections, allTrees }
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
-      byteName: '',
-      byteId: '',
-      bitName: '',
-      treeName: '',
+      byte: '',
+      bit: '',
+      tree: '',
       year: new Date().getFullYear(),
     },
   });
-
-  const byteNameValue = form.watch('byteName');
-  
-  const matchingBytes = useMemo(() => {
-    if (!byteNameValue) return [];
-    return allPeople.filter(p => p.name.toLowerCase() === byteNameValue.toLowerCase());
-  }, [byteNameValue, allPeople]);
-
-  // Effect to handle auto-selection or dropdown logic for byteId
-  useEffect(() => {
-    if (matchingBytes.length === 1) {
-      form.setValue('byteId', matchingBytes[0].id);
-    } else {
-      // If there are multiple matches or no matches, clear the byteId
-      // The user will have to select from the dropdown if multiple
-      form.setValue('byteId', ''); 
-    }
-  }, [matchingBytes, form]);
   
   const proceedWithSubmit = async (data: z.infer<typeof FormSchema>) => {
     if (!firestore) {
@@ -115,21 +87,9 @@ export function ConnectionForm({ currentTree, allPeople, connections, allTrees }
       return;
     }
     
-    // Determine the byteId. If not set (new person), generate one.
-    const byteId = data.byteId || (matchingBytes.length === 1 ? matchingBytes[0].id : generateId());
-    
-    // Generate a new ID for the new bit, as each "bit" is a new person in a new context
-    const bitId = generateId();
-
-    const finalTreeName = data.treeName || currentTree || 'Default Tree';
-    
     const newConnection = { 
-        bitId,
-        bitName: data.bitName,
-        byteId,
-        byteName: data.byteName,
-        treeName: finalTreeName,
-        year: data.year,
+        ...data, 
+        tree: data.tree || currentTree || 'Default Tree',
         createdAt: serverTimestamp() 
     };
     
@@ -140,10 +100,9 @@ export function ConnectionForm({ currentTree, allPeople, connections, allTrees }
           description: 'Connection added successfully.',
       });
       form.reset({
-        byteName: '',
-        byteId: '',
-        bitName: '',
-        treeName: '',
+        byte: '',
+        bit: '',
+        tree: '',
         year: new Date().getFullYear(),
       });
     } catch (error) {
@@ -159,33 +118,21 @@ export function ConnectionForm({ currentTree, allPeople, connections, allTrees }
   }
 
   function onSubmit(data: z.infer<typeof FormSchema>) {
-    if (matchingBytes.length > 1 && !data.byteId) {
-        toast({
-            variant: 'destructive',
-            title: 'Multiple People Found',
-            description: `Multiple people named '${data.byteName}' exist. Please select the correct ID.`,
-        });
-        return;
-    }
-
     // If tree name ends with tree (case-insensitive) but is not just "Tree"
-    if (data.treeName.toLowerCase().endsWith('tree') && data.treeName.length > 4) {
+    if (data.tree.toLowerCase().endsWith('tree') && data.tree.length > 4) {
         setPendingData(data);
         setTreeNameWarningOpen(true);
         return;
     }
 
-    const byteIdToCheck = data.byteId || (matchingBytes.length === 1 ? matchingBytes[0].id : null);
-    if (byteIdToCheck) {
-        const treeName = findBitInOtherTrees(connections, byteIdToCheck, data.treeName || currentTree);
-        if (treeName) {
-          setPendingData(data);
-          setOtherTreeName(treeName);
-          setWarningOpen(true);
-          return;
-        }
+    const treeName = findBitInOtherTrees(connections, data.byte, data.tree || currentTree);
+    if (treeName) {
+      setPendingData(data);
+      setOtherTreeName(treeName);
+      setWarningOpen(true);
+      return;
     }
-
+    
     proceedWithSubmit(data);
   }
 
@@ -207,16 +154,13 @@ export function ConnectionForm({ currentTree, allPeople, connections, allTrees }
   const handleTreeNameWarningConfirm = () => {
     setTreeNameWarningOpen(false);
     if (pendingData) {
-        const byteIdToCheck = pendingData.byteId || (matchingBytes.length === 1 ? matchingBytes[0].id : null);
-        if (byteIdToCheck) {
-            const treeName = findBitInOtherTrees(connections, byteIdToCheck, pendingData.treeName || currentTree);
-            if (treeName) {
-                setOtherTreeName(treeName);
-                setWarningOpen(true);
-                return;
-            }
-        }
-        proceedWithSubmit(pendingData);
+      const treeName = findBitInOtherTrees(connections, pendingData.byte, pendingData.tree || currentTree);
+      if (treeName) {
+        setOtherTreeName(treeName);
+        setWarningOpen(true);
+        return;
+      }
+      proceedWithSubmit(pendingData);
     }
   }
 
@@ -227,11 +171,11 @@ export function ConnectionForm({ currentTree, allPeople, connections, allTrees }
 
   // If the current tree selection changes, update the placeholder in the form
   useEffect(() => {
-    form.setValue('treeName', '');
+    form.setValue('tree', '');
   }, [currentTree, form]);
 
-  const allPeopleNames = useMemo(() => Array.from(new Set(allPeople.map(p => p.name))), [allPeople]);
-
+  const allPeopleNames = useMemo(() => allPeople.map(p => p.name), [allPeople]);
+  const allTrees = useMemo(() => Array.from(new Set(connections.map(c => c.tree || ''))).filter(Boolean), [connections]);
 
   return (
     <>
@@ -245,7 +189,7 @@ export function ConnectionForm({ currentTree, allPeople, connections, allTrees }
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
-                name="byteName"
+                name="byte"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Byte's Name</FormLabel>
@@ -260,58 +204,15 @@ export function ConnectionForm({ currentTree, allPeople, connections, allTrees }
                 )}
               />
 
-              {matchingBytes.length > 1 && (
-                 <FormField
-                    control={form.control}
-                    name="byteId"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Byte's ID</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                            <SelectTrigger>
-                            <SelectValue placeholder={`Select ID for ${byteNameValue}`} />
-                            </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                            {matchingBytes.map(person => (
-                                <SelectItem key={person.id} value={person.id}>
-                                    {person.id}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                        </Select>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
-              )}
-               {matchingBytes.length === 1 && (
-                 <FormField
-                    control={form.control}
-                    name="byteId"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Byte's ID</FormLabel>
-                        <FormControl>
-                            <Input placeholder="ID auto-filled" {...field} readOnly className="bg-muted"/>
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
-              )}
-
               <FormField
                 control={form.control}
-                name="bitName"
+                name="bit"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Bit's Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter new bit's name" {...field} />
+                      <Input placeholder="Enter new bit's name" {...field} list="people-list" />
                     </FormControl>
-                     <FormDescription>Each new Bit is treated as a new person.</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -319,7 +220,7 @@ export function ConnectionForm({ currentTree, allPeople, connections, allTrees }
 
               <FormField
                 control={form.control}
-                name="treeName"
+                name="tree"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Tree Name (Optional)</FormLabel>
@@ -365,7 +266,7 @@ export function ConnectionForm({ currentTree, allPeople, connections, allTrees }
           <AlertDialogHeader>
             <AlertDialogTitle>Cross-Tree Connection Warning</AlertDialogTitle>
             <AlertDialogDescription>
-              The person you entered as a Byte, '{pendingData?.byteName}', already exists as a Bit in the '{otherTreeName}' tree. Are you sure you want to add them as a Byte to this new tree?
+              The person you entered as a Byte, '{pendingData?.byte}', already exists as a Bit in the '{otherTreeName}' tree. Are you sure you want to add them as a Byte to this new tree?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -380,7 +281,7 @@ export function ConnectionForm({ currentTree, allPeople, connections, allTrees }
           <AlertDialogHeader>
             <AlertDialogTitle>Tree Name Warning</AlertDialogTitle>
             <AlertDialogDescription>
-              The tree name you entered, '{pendingData?.treeName}', seems to end with "Tree". This might be redundant. Are you sure you want to proceed?
+              The tree name you entered, '{pendingData?.tree}', seems to end with "Tree". This might be redundant. Are you sure you want to proceed?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -9,13 +9,6 @@ import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
-import {
   Form,
   FormControl,
   FormDescription,
@@ -40,39 +33,26 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import type { Connection, Person } from '@/lib/types';
 import { useFirestore } from '@/firebase';
 import { collection, doc, writeBatch, query, where, getDocs } from 'firebase/firestore';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Pencil } from 'lucide-react';
 import { Separator } from './ui/separator';
 
 const SearchSchema = z.object({
   personName: z.string().min(1, "Person's name is required."),
-  personId: z.string().optional(),
 });
 
 const ModifySchema = z.object({
-  personId: z.string(),
-  newPersonName: z.string().min(1, "Person's name cannot be empty."),
+  originalName: z.string(),
+  newName: z.string().min(1, "Person's name cannot be empty."),
   connections: z.array(z.object({
     id: z.string(),
-    bitId: z.string(),
-    bitName: z.string(),
-    byteId: z.string(),
-    byteName: z.string(),
-    treeName: z.string().min(1, 'Tree name is required.'),
+    bit: z.string(),
+    byte: z.string(),
+    tree: z.string().min(1, 'Tree name is required.'),
     year: z.coerce
       .number()
       .min(1900, 'Please enter a valid year.')
@@ -81,25 +61,22 @@ const ModifySchema = z.object({
 });
 
 type ModifyConnectionFormProps = {
-  allPeople: Person[];
-  allTrees: string[];
   connections: Connection[];
+  allPeople: Person[];
 };
 
 export function ModifyConnectionForm({
-  allPeople,
-  allTrees,
   connections,
+  allPeople,
 }: ModifyConnectionFormProps) {
   const { toast } = useToast();
   const firestore = useFirestore();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [deleteWarningOpen, setDeleteWarningOpen] = useState(false);
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
   
   const searchForm = useForm<z.infer<typeof SearchSchema>>({
     resolver: zodResolver(SearchSchema),
-    defaultValues: { personName: '', personId: '' },
+    defaultValues: { personName: '' },
   });
 
   const modifyForm = useForm<z.infer<typeof ModifySchema>>({
@@ -111,38 +88,28 @@ export function ModifyConnectionForm({
     name: 'connections',
   });
 
-  const personNameValue = searchForm.watch('personName');
-  const matchingPeople = useMemo(() => {
-    if (!personNameValue) return [];
-    return allPeople.filter(p => p.name.toLowerCase() === personNameValue.toLowerCase());
-  }, [personNameValue, allPeople]);
+  function onSearch(data: z.infer<typeof SearchSchema>) {
+    const person = allPeople.find(
+      (p) => p.name.toLowerCase() === data.personName.toLowerCase()
+    );
 
-  function onSearch({ personName, personId }: z.infer<typeof SearchSchema>) {
-    let personToEdit: Person | undefined;
-
-    if (matchingPeople.length === 1) {
-        personToEdit = matchingPeople[0];
-    } else if (matchingPeople.length > 1) {
-        if (!personId) {
-            toast({ variant: 'destructive', title: 'Multiple People Found', description: `Please select an ID for '${personName}'.`});
-            return;
-        }
-        personToEdit = allPeople.find(p => p.id === personId);
-    } else {
-        personToEdit = allPeople.find(p => p.name.toLowerCase() === personName.toLowerCase());
-    }
-
-    if (!personToEdit) {
-      toast({ variant: 'destructive', title: 'Not Found', description: `No person named '${personName}' found.` });
+    if (!person) {
+      toast({
+        variant: 'destructive',
+        title: 'Not Found',
+        description: `No person named '${data.personName}' found.`,
+      });
       return;
     }
+
+    const relatedConnections = connections.filter(
+      (c) => c.bit === person.name || c.byte === person.name
+    );
     
-    const relatedConnections = connections.filter((c) => c.bitId === personToEdit!.id || c.byteId === personToEdit!.id);
-    
-    setSelectedPerson(personToEdit);
+    setSelectedPerson(person);
     modifyForm.reset({
-        personId: personToEdit.id,
-        newPersonName: personToEdit.name,
+      originalName: person.name,
+      newName: person.name,
     });
     replace(relatedConnections); // Populate the field array
     setDialogOpen(true);
@@ -151,146 +118,89 @@ export function ModifyConnectionForm({
   async function onModify(data: z.infer<typeof ModifySchema>) {
     if (!firestore || !selectedPerson) return;
     
-    const { personId, newPersonName, connections: modifiedConnections } = data;
-    const oldPersonName = selectedPerson.name;
+    const { originalName, newName, connections: modifiedConnections } = data;
 
     try {
-        const batch = writeBatch(firestore);
-        const connectionsRef = collection(firestore, 'connections');
+      const batch = writeBatch(firestore);
 
-        // Update name where the person is a 'bit'
-        const bitQuery = query(connectionsRef, where('bitId', '==', personId));
-        const bitQuerySnapshot = await getDocs(bitQuery);
-        bitQuerySnapshot.forEach((doc) => {
-            batch.update(doc.ref, { bitName: newPersonName });
+      // Update name where the person is a 'bit'
+      const bitQuery = query(collection(firestore, 'connections'), where('bit', '==', originalName));
+      const bitQuerySnapshot = await getDocs(bitQuery);
+      bitQuerySnapshot.forEach((doc) => {
+        batch.update(doc.ref, { bit: newName });
+      });
+
+      // Update name where the person is a 'byte'
+      const byteQuery = query(collection(firestore, 'connections'), where('byte', '==', originalName));
+      const byteQuerySnapshot = await getDocs(byteQuery);
+      byteQuerySnapshot.forEach((doc) => {
+        batch.update(doc.ref, { byte: newName });
+      });
+
+      // Update individual connections from the form
+      modifiedConnections.forEach(conn => {
+        const docRef = doc(firestore, 'connections', conn.id);
+        batch.update(docRef, {
+            bit: conn.bit === originalName ? newName : conn.bit,
+            byte: conn.byte === originalName ? newName : conn.byte,
+            tree: conn.tree,
+            year: conn.year,
         });
+      });
 
-        // Update name where the person is a 'byte'
-        const byteQuery = query(connectionsRef, where('byteId', '==', personId));
-        const byteQuerySnapshot = await getDocs(byteQuery);
-        byteQuerySnapshot.forEach((doc) => {
-            batch.update(doc.ref, { byteName: newPersonName });
-        });
-
-        // Update the specific connections from the form
-        modifiedConnections.forEach(conn => {
-            const docRef = doc(firestore, 'connections', conn.id);
-            const updatePayload: Partial<Connection> = {
-                treeName: conn.treeName,
-                year: conn.year,
-            };
-            // Update names in the specific connection record as well
-            if (conn.bitId === personId) updatePayload.bitName = newPersonName;
-            if (conn.byteId === personId) updatePayload.byteName = newPersonName;
-            
-            // This part is tricky - we don't allow re-assigning bit/byte in this UI
-            // but we need to ensure the names are correct if the main person name changed.
-            // The logic above handles the name change across all records.
-            // Here we only update year and tree.
-            batch.update(docRef, {
-                treeName: conn.treeName,
-                year: conn.year,
-            });
-        });
-
-        await batch.commit();
-
-        toast({
-            title: 'Success!',
-            description: `Details for '${oldPersonName}' updated successfully.`,
-        });
-
+      await batch.commit();
+      
+      toast({
+        title: 'Success!',
+        description: `'${originalName}' has been renamed to '${newName}' and connections updated.`,
+      });
       setDialogOpen(false);
       searchForm.reset();
 
     } catch (error) {
       console.error('Error updating documents: ', error);
-      toast({ variant: 'destructive', title: 'Update Failed', description: 'There was a problem updating the connections.'});
+      toast({
+        variant: 'destructive',
+        title: 'Update Failed',
+        description: 'There was a problem updating the connections.',
+      });
     }
   }
 
-  const handleDeletePerson = async () => {
-    if (!firestore || !selectedPerson) return;
-
-    try {
-        const batch = writeBatch(firestore);
-        const connectionsRef = collection(firestore, 'connections');
-        
-        // Find connections where the person is a 'bit'
-        const bitQuery = query(connectionsRef, where('bitId', '==', selectedPerson.id));
-        const bitQuerySnapshot = await getDocs(bitQuery);
-        bitQuerySnapshot.forEach((doc) => batch.delete(doc.ref));
-
-        // Find connections where the person is a 'byte'
-        const byteQuery = query(connectionsRef, where('byteId', '==', selectedPerson.id));
-        const byteQuerySnapshot = await getDocs(byteQuery);
-        byteQuerySnapshot.forEach((doc) => batch.delete(doc.ref));
-        
-        await batch.commit();
-
-        toast({ title: 'Success!', description: `Successfully removed '${selectedPerson.name}' and all associated connections.`});
-        setDeleteWarningOpen(false);
-        setDialogOpen(false);
-        searchForm.reset();
-
-    } catch (error) {
-        console.error("Error removing documents: ", error);
-        toast({ variant: 'destructive', title: 'Deletion Failed', description: 'There was a problem removing the person.'});
-    }
-  };
-
-  const allPeopleNames = useMemo(() => Array.from(new Set(allPeople.map(p => p.name))), [allPeople]);
-
+  const allPeopleNames = useMemo(() => allPeople.map(p => p.name), [allPeople]);
+  const allTrees = useMemo(() => Array.from(new Set(connections.map(c => c.tree || ''))).filter(Boolean), [connections]);
 
   return (
     <>
       <Card className="bg-transparent border-none shadow-none">
         <CardHeader className="p-0 mb-4">
-          <CardTitle className="text-lg">Modify / Remove Person</CardTitle>
+          <CardTitle className="text-lg">Modify Person / Connections</CardTitle>
           <CardDescription>
-            Find a person to edit their name or remove them.
+            Find a person to edit their name or associated connections.
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0">
           <Form {...searchForm}>
-            <form onSubmit={searchForm.handleSubmit(onSearch)} className="space-y-4" >
-              <FormField control={searchForm.control} name="personName" render={({ field }) => (
+            <form onSubmit={searchForm.handleSubmit(onSearch)} className="space-y-4">
+              <FormField
+                control={searchForm.control}
+                name="personName"
+                render={({ field }) => (
                   <FormItem>
                     <FormLabel>Person's Name</FormLabel>
                     <FormControl>
                       <Input placeholder="Enter name to find" {...field} list="all-people-list" />
                     </FormControl>
                      <datalist id="all-people-list">
-                      {allPeopleNames.map((name) => (<option key={name} value={name} />))}
+                      {allPeopleNames.map((name) => (
+                        <option key={name} value={name} />
+                      ))}
                     </datalist>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-               {matchingPeople.length > 1 && (
-                 <FormField control={searchForm.control} name="personId" render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Person's ID</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                            <SelectTrigger>
-                            <SelectValue placeholder={`Select ID for ${personNameValue}`} />
-                            </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                            {matchingPeople.map(person => (
-                                <SelectItem key={person.id} value={person.id}>
-                                    {person.id}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                        </Select>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
-              )}
-              <Button type="submit" className="w-full" disabled={!firestore} >
+              <Button type="submit" className="w-full" disabled={!firestore}>
                 <Pencil className="mr-2 h-4 w-4" /> Find & Modify
               </Button>
             </form>
@@ -303,23 +213,21 @@ export function ModifyConnectionForm({
           <DialogHeader>
             <DialogTitle>Modify Details for {selectedPerson?.name}</DialogTitle>
             <DialogDescription>
-              Edit name and connection details. Changes will apply to all records.
+              Edit name and connection details. Name changes will apply to all records.
             </DialogDescription>
           </DialogHeader>
            <Form {...modifyForm}>
                 <form onSubmit={modifyForm.handleSubmit(onModify)} className="space-y-4 pt-4">
-                    <FormField control={modifyForm.control} name="newPersonName" render={({ field }) => (
+                    <FormField
+                      control={modifyForm.control}
+                      name="newName"
+                      render={({ field }) => (
                         <FormItem>
                           <FormLabel>Person's New Name</FormLabel>
-                          <FormControl><Input {...field} /></FormControl>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
                           <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField control={modifyForm.control} name="personId" render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Person ID</FormLabel>
-                          <FormControl><Input {...field} readOnly className="bg-muted"/></FormControl>
                         </FormItem>
                       )}
                     />
@@ -330,25 +238,37 @@ export function ModifyConnectionForm({
                         {fields.map((field, index) => (
                           <div key={field.id} className="space-y-4 p-4 rounded-lg border">
                               <p className="text-sm font-medium text-muted-foreground">
-                                {field.bitId === selectedPerson?.id
-                                    ? `Bit to ${field.byteName}`
-                                    : `Byte for ${field.bitName}`
-                                } in <span className="text-foreground font-semibold">{field.treeName}</span>
+                                {field.bit === selectedPerson?.name
+                                    ? `Bit to ${field.byte}`
+                                    : `Byte for ${field.bit}`
+                                } in <span className="text-foreground font-semibold">{field.tree}</span>
                               </p>
-                              <FormField control={modifyForm.control} name={`connections.${index}.treeName`} render={({ field }) => (
+                              <FormField
+                                control={modifyForm.control}
+                                name={`connections.${index}.tree`}
+                                render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Tree Name</FormLabel>
-                                    <FormControl><Input {...field} list="all-trees-list" /></FormControl>
+                                    <FormControl>
+                                      <Input {...field} list="all-trees-list" />
+                                    </FormControl>
                                     <datalist id="all-trees-list">
-                                        {allTrees.map((tree) => (<option key={tree} value={tree} />))}
+                                      {allTrees.map((tree) => (
+                                        <option key={tree} value={tree} />
+                                      ))}
                                     </datalist>
                                     <FormMessage />
                                 </FormItem>
                                 )}/>
-                               <FormField control={modifyForm.control} name={`connections.${index}.year`} render={({ field }) => (
+                               <FormField
+                                control={modifyForm.control}
+                                name={`connections.${index}.year`}
+                                render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Year of Pickup</FormLabel>
-                                    <FormControl><Input type="number" {...field} /></FormControl>
+                                    <FormControl>
+                                      <Input type="number" {...field} />
+                                    </FormControl>
                                     <FormMessage />
                                 </FormItem>
                                 )}/>
@@ -359,31 +279,15 @@ export function ModifyConnectionForm({
                     <Button type="submit" className="w-full">Save All Changes</Button>
                 </form>
             </Form>
-          <DialogFooter className="sm:justify-between pt-4">
-             <Button type="button" variant="destructive" onClick={() => setDeleteWarningOpen(true)}>
-                <Trash2 className="mr-2 h-4 w-4" /> Delete Person
-             </Button>
+          <DialogFooter className="sm:justify-end">
             <DialogClose asChild>
-              <Button type="button" variant="secondary">Close</Button>
+              <Button type="button" variant="secondary">
+                Close
+              </Button>
             </DialogClose>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-       <AlertDialog open={deleteWarningOpen} onOpenChange={setDeleteWarningOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete '{selectedPerson?.name}' and all their connections. This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeletePerson} className="bg-destructive hover:bg-destructive/90">Confirm & Delete</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 }

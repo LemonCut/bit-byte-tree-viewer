@@ -36,6 +36,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { AdminUnlock } from '@/components/admin-unlock';
 import { Button } from '@/components/ui/button';
 import { LogOut, Search, Share2 } from 'lucide-react';
+import { RemovePersonForm } from '@/components/remove-person-form';
 
 
 export default function Home() {
@@ -140,16 +141,19 @@ export default function Home() {
                 currentTree={currentTreeName}
                 allPeople={allPeople}
                 connections={connections || []}
-                allTrees={allTrees}
               />
             </SidebarGroup>
             <Separator />
             <SidebarGroup>
-                <ModifyConnectionForm allPeople={allPeople} allTrees={allTrees} connections={connections || []} />
+                <ModifyConnectionForm connections={connections || []} allPeople={allPeople} />
+            </SidebarGroup>
+            <Separator />
+             <SidebarGroup>
+                <RemovePersonForm connections={connections || []} allPeople={allPeople} />
             </SidebarGroup>
             <Separator />
             <SidebarGroup>
-              <DataManagement connections={connections || []} allPeople={allPeople} />
+              <DataManagement connections={connections || []} />
             </SidebarGroup>
           </SidebarContent>
         </Sidebar>
