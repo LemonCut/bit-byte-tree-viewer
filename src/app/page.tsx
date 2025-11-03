@@ -38,6 +38,7 @@ import { Button } from '@/components/ui/button';
 import { LogOut, Share2 } from 'lucide-react';
 import { ShuffleLayoutButton } from '@/components/shuffle-layout-button';
 import React from 'react';
+import { HelpDialog } from '@/components/help-dialog';
 
 
 export default function Home() {
@@ -224,6 +225,7 @@ export default function Home() {
           </div>
         </main>
         <AdminUnlock onUnlock={handleAdminToggle} />
+        <HelpDialog />
       </div>
     </div>
   );

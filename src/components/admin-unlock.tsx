@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useActionState } from 'react';
@@ -55,7 +56,7 @@ export function AdminUnlock({ onUnlock }: { onUnlock: () => void }) {
 
   return (
     <>
-      <div className="group fixed bottom-4 left-4 h-12 w-12 z-50">
+      <div className="group fixed bottom-20 left-4 h-12 w-12 z-50">
         <Button
           onClick={() => setOpen(true)}
           variant="outline"
