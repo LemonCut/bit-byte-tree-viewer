@@ -1,5 +1,23 @@
 'use server';
 
-// This file is no longer used for form actions and can be removed or repurposed.
-// For simplicity, we are keeping it but clearing its content.
-// The form logic has been moved to be client-side in `ConnectionForm.tsx`.
+import { z } from 'zod';
+
+const schema = z.object({
+  password: z.string().min(1, 'Password is required'),
+});
+
+export async function verifyAdminPassword(prevState: any, formData: FormData) {
+  const parsed = schema.safeParse({
+    password: formData.get('password'),
+  });
+
+  if (!parsed.success) {
+    return { success: false, message: 'Password is required.' };
+  }
+  
+  if (parsed.data.password === process.env.ADMIN_PASSWORD) {
+    return { success: true, message: 'Admin mode unlocked.' };
+  }
+
+  return { success: false, message: 'Incorrect password.' };
+}
