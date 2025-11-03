@@ -13,7 +13,7 @@ import {
   SidebarGroupLabel,
 } from '@/components/ui/sidebar';
 import { TreeViewLogo } from '@/components/icons';
-import { buildTree, getTrees, getBits, getAllPeople, getBytes, findTreeAKAs } from '@/lib/data';
+import { buildTree, getTrees, getAllPeople, findTreeAKAs } from '@/lib/data';
 import { TreeSelector } from '@/components/tree-selector';
 import { ConnectionForm } from '@/components/connection-form';
 import { DataManagement } from '@/components/data-management';
@@ -27,7 +27,7 @@ import {
   CardDescription,
   CardContent,
 } from '@/components/ui/card';
-import type { Connection, Person } from '@/lib/types';
+import type { Connection, Person, TreeNode } from '@/lib/types';
 import { SearchDialog } from '@/components/search-dialog';
 import { useCollection, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
@@ -38,6 +38,7 @@ import { Button } from '@/components/ui/button';
 import { LogOut, Search, Share2 } from 'lucide-react';
 import { RemovePersonForm } from '@/components/remove-person-form';
 import { ClearDatabase } from '@/components/clear-database';
+import { ShuffleLayoutButton } from '@/components/shuffle-layout-button';
 
 
 export default function Home() {
@@ -47,6 +48,7 @@ export default function Home() {
   const firestore = useFirestore();
   
   const [isAdmin, setIsAdmin] = useState(false);
+  const [shuffledTreeData, setShuffledTreeData] = useState<TreeNode[] | null>(null);
   
   const connectionsQuery = useMemoFirebase(
     () => (firestore ? collection(firestore, 'connections') : null),
@@ -91,6 +93,10 @@ export default function Home() {
       connections && treeParam ? buildTree(connections, treeParam) : [],
     [connections, treeParam]
   );
+
+  useEffect(() => {
+    setShuffledTreeData(treeData);
+  }, [treeData]);
   
   let pageTitle = 'Welcome';
   let pageSubTitle = '';
@@ -137,6 +143,13 @@ export default function Home() {
               )}
             </SidebarGroup>
             <Separator />
+             <SidebarGroup>
+                <ShuffleLayoutButton
+                    treeData={shuffledTreeData}
+                    onShuffle={setShuffledTreeData}
+                />
+            </SidebarGroup>
+            <Separator />
             <SidebarGroup>
               <ConnectionForm
                 currentTree={currentTreeName}
@@ -175,7 +188,7 @@ export default function Home() {
           </header>
           <main className="flex-1 overflow-auto">
             <div className="p-4 md:p-6 lg:p-8 h-full overflow-auto">
-              <OrgChartWrapper loading={loading} connections={connections} treeData={treeData} currentTreeName={currentTreeName} treeParam={treeParam} />
+              <OrgChartWrapper loading={loading} connections={connections} treeData={shuffledTreeData} currentTreeName={currentTreeName} treeParam={treeParam} />
             </div>
           </main>
         </div>
@@ -209,7 +222,7 @@ export default function Home() {
                 <h2 className="text-2xl font-bold tracking-tight">{pageTitle}</h2>
                 {pageSubTitle && <p className="text-sm text-muted-foreground">{pageSubTitle}</p>}
             </div>
-            <OrgChartWrapper loading={loading} connections={connections} treeData={treeData} currentTreeName={currentTreeName} treeParam={treeParam} />
+            <OrgChartWrapper loading={loading} connections={connections} treeData={shuffledTreeData} currentTreeName={currentTreeName} treeParam={treeParam} />
           </div>
         </main>
         <AdminUnlock onUnlock={handleAdminToggle} />
@@ -218,7 +231,7 @@ export default function Home() {
   );
 }
 
-const OrgChartWrapper = ({ loading, connections, treeData, currentTreeName, treeParam }: { loading: boolean, connections: Connection[] | null, treeData: any[], currentTreeName: string, treeParam: string | null }) => {
+const OrgChartWrapper = ({ loading, connections, treeData, currentTreeName, treeParam }: { loading: boolean, connections: Connection[] | null, treeData: TreeNode[] | null, currentTreeName: string, treeParam: string | null }) => {
   if (!treeParam && !loading) {
     return (
        <div className="flex items-center justify-center h-full">
@@ -237,7 +250,7 @@ const OrgChartWrapper = ({ loading, connections, treeData, currentTreeName, tree
     )
   }
 
-  if (loading) {
+  if (loading || treeData === null) {
     return (
         <Card className="mt-4">
             <CardHeader>
@@ -282,3 +295,5 @@ const OrgChartWrapper = ({ loading, connections, treeData, currentTreeName, tree
     </div>
   )
 }
+
+    
