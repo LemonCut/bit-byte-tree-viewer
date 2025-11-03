@@ -157,7 +157,7 @@ export default function Home() {
           </SidebarContent>
         </Sidebar>
         <div className="flex flex-col flex-1 min-w-0">
-          <header className="flex items-center justify-between p-4 border-b sticky top-0 bg-background/80 backdrop-blur-sm z-10 h-16 shrink-0">
+          <header className="flex items-center justify-between p-4 border-b sticky top-0 bg-background/80 backdrop-blur-sm z-20 h-16 shrink-0">
             <div className="flex items-center gap-4">
               <SidebarTrigger className="md:hidden" />
                <div>
@@ -166,16 +166,22 @@ export default function Home() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              {loading ? (
-                <Skeleton className="h-10 w-[200px]" />
-              ) : (
-                <TreeSelector trees={allTrees} defaultTree={currentTreeName} className="w-[200px]" />
-              )}
               <SearchDialog connections={connections || []} />
             </div>
           </header>
-          <main className="flex-1 overflow-auto">
+          <main className="flex-1 overflow-auto relative">
+             <div className="absolute top-4 right-4 z-10">
+                {loading ? (
+                    <Skeleton className="h-10 w-[200px]" />
+                ) : (
+                    <TreeSelector trees={allTrees} defaultTree={currentTreeName} className="w-[200px] bg-background rounded-md shadow-md" />
+                )}
+            </div>
             <div className="p-4 md:p-6 lg:p-8 h-full overflow-auto">
+              <div className="mb-4">
+                  <h2 className="text-2xl font-bold tracking-tight">{pageTitle}</h2>
+                  {pageSubTitle && <p className="text-sm text-muted-foreground">{pageSubTitle}</p>}
+              </div>
               <OrgChartWrapper loading={loading} connections={connections} treeData={shuffledTreeData} currentTreeName={currentTreeName} treeParam={treeParam} />
             </div>
           </main>
