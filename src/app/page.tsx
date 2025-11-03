@@ -37,6 +37,7 @@ import { AdminUnlock } from '@/components/admin-unlock';
 import { Button } from '@/components/ui/button';
 import { LogOut, Search, Share2 } from 'lucide-react';
 import { RemovePersonForm } from '@/components/remove-person-form';
+import { ClearDatabase } from '@/components/clear-database';
 
 
 export default function Home() {
@@ -154,6 +155,10 @@ export default function Home() {
             <Separator />
             <SidebarGroup>
               <DataManagement connections={connections || []} />
+            </SidebarGroup>
+             <Separator />
+            <SidebarGroup>
+              <ClearDatabase connections={connections || []} />
             </SidebarGroup>
           </SidebarContent>
         </Sidebar>
