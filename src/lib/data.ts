@@ -167,15 +167,16 @@ function generateTooltip(person: SearchResult): string {
         if (conn.isRoot) {
             return `${conn.treeName} (Root)`;
         }
-        const role = conn.isBit ? 'Bit' : 'Byte';
-        const otherPerson = conn.otherPersonName;
-        if (role === 'Bit') {
-            return `${conn.treeName} (${conn.year} - ${otherPerson}'s Bit)`;
-        }
-        return `${conn.treeName} (Bit to ${otherPerson})`;
+        // It's a bit connection
+        return `${conn.treeName} (${conn.year} - ${conn.otherPersonName}'s Bit)`;
+
     }).join('\n');
 
-    return `${name}\nTree(s):\n${treeInfo}`;
+    let finalTooltip = name;
+    if (treeInfo) {
+      finalTooltip += `\nTree(s):\n${treeInfo}`;
+    }
+    return finalTooltip;
 }
 
 
@@ -185,59 +186,76 @@ export function searchPeople(connections: Connection[], query: string): SearchRe
   const lowerCaseQuery = query.toLowerCase();
   const people = new Map<string, SearchResult>();
 
-  connections.forEach(({ bit, byte, tree, year }) => {
-    const currentTreeName = tree || '(None)';
-    
-    // Function to initialize a person in the map if they don't exist
-    const ensurePerson = (name: string) => {
-        if (!people.has(name)) {
-            people.set(name, {
-                name: name,
-                connections: [],
-                tooltip: ''
-            });
-        }
-    };
-
-    if (bit.toLowerCase().includes(lowerCaseQuery)) {
-      ensurePerson(bit);
-      people.get(bit)!.connections.push({
-        treeName: currentTreeName,
-        year: year,
-        isBit: true,
-        isByte: false,
-        otherPersonName: byte,
-        isRoot: false, // A bit is never a root in its own connection
+  // Function to initialize a person in the map if they don't exist
+  const ensurePerson = (name: string) => {
+    if (!people.has(name)) {
+      people.set(name, {
+        name: name,
+        connections: [],
+        tooltip: ''
       });
     }
-
-    if (byte.toLowerCase().includes(lowerCaseQuery)) {
-      ensurePerson(byte);
-      const isRoot = !connections.some(c => c.bit === byte && (c.tree || '(None)') === currentTreeName);
-      
-      // A person can be a byte to multiple bits in the same tree. Avoid adding duplicate 'byte' entries.
-      const existingByteEntry = people.get(byte)!.connections.find(c => c.treeName === currentTreeName && c.isByte);
-      if (!existingByteEntry) {
-          people.get(byte)!.connections.push({
-            treeName: currentTreeName,
-            year: null,
-            isBit: false,
-            isByte: true,
-            otherPersonName: null,
-            isRoot: isRoot,
-          });
-      }
-    }
-  });
+    return people.get(name)!;
+  };
   
+  // Find all people whose names match the query
+  const allPeopleNames = new Set(connections.flatMap(c => [c.bit, c.byte]));
+  const matchedNames = Array.from(allPeopleNames).filter(name => name.toLowerCase().includes(lowerCaseQuery));
+
+  // For each matched person, find all their connections
+  matchedNames.forEach(name => {
+      const personResult = ensurePerson(name);
+
+      // Find connections where this person is a BIT (a child)
+      connections.forEach(({ bit, byte, tree, year }) => {
+          if (bit === name) {
+              personResult.connections.push({
+                  treeName: tree || '(None)',
+                  year: year,
+                  isBit: true,
+                  isByte: false,
+                  otherPersonName: byte,
+                  isRoot: false,
+              });
+          }
+      });
+      
+      // Find connections where this person is a BYTE (a parent)
+      // And determine if they are a root in any tree
+      const asByteInTrees = new Set<string>();
+      connections.forEach(({ bit, byte, tree }) => {
+          if (byte === name) {
+              asByteInTrees.add(tree || '(None)');
+          }
+      });
+
+      asByteInTrees.forEach(treeName => {
+        const isRoot = !connections.some(c => c.bit === name && (c.tree || '(None)') === treeName);
+        if (isRoot) {
+           // Check if this root connection is already represented by a bit connection
+            const alreadyHasConnection = personResult.connections.some(c => c.treeName === treeName);
+            if (!alreadyHasConnection) {
+                 personResult.connections.push({
+                    treeName: treeName,
+                    year: null,
+                    isBit: false,
+                    isByte: true,
+                    otherPersonName: null,
+                    isRoot: true,
+                });
+            }
+        }
+      });
+  });
+
   const results = Array.from(people.values()).sort((a, b) => a.name.localeCompare(b.name));
   
   // Generate tooltip after all connections are gathered
   results.forEach(person => {
-      person.tooltip = generateTooltip(person);
+    person.tooltip = generateTooltip(person);
   });
   
-  return results;
+  return results.filter(p => p.connections.length > 0);
 }
 
 export function findTreeAKAs(connections: Connection[]): TreeAKA {
