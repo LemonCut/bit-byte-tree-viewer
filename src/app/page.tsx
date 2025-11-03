@@ -98,17 +98,8 @@ export default function Home() {
   }, [treeData]);
   
   let pageTitle = 'Welcome';
-  let pageSubTitle = '';
   if (treeParam) {
     pageTitle = `${treeParam} Tree`;
-    // Find the original name (key) for the current new name (value)
-    // Exclude '(None)' from this logic
-    if (treeParam !== '(None)') {
-        const originalName = Object.keys(treeAKAs).find(key => treeAKAs[key] === treeParam);
-        if (originalName) {
-            pageSubTitle = `Previously... ${originalName} Tree`;
-        }
-    }
   }
 
 
@@ -163,7 +154,6 @@ export default function Home() {
               <SidebarTrigger className="md:hidden" />
                <div>
                   <h2 className="text-2xl font-bold tracking-tight">{pageTitle}</h2>
-                  {pageSubTitle && <p className="text-sm text-muted-foreground">{pageSubTitle}</p>}
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -181,7 +171,6 @@ export default function Home() {
             <div className="p-4 md:p-6 lg:p-8 h-full overflow-auto">
               <div className="mb-4">
                   <h2 className="text-2xl font-bold tracking-tight">{pageTitle}</h2>
-                  {pageSubTitle && <p className="text-sm text-muted-foreground">{pageSubTitle}</p>}
               </div>
               <OrgChartWrapper 
                 loading={loading} 
@@ -221,7 +210,6 @@ export default function Home() {
           <div className="p-4 md:p-6 lg:p-8 h-full overflow-auto">
              <div className="mb-4">
                 <h2 className="text-2xl font-bold tracking-tight">{pageTitle}</h2>
-                {pageSubTitle && <p className="text-sm text-muted-foreground">{pageSubTitle}</p>}
             </div>
             <OrgChartWrapper 
                 loading={loading} 
