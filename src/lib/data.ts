@@ -225,7 +225,7 @@ export function searchPeople(connections: Connection[], query: string): SearchRe
       // Find connections where this person is a BYTE (a parent)
       // And determine if they are a root in any tree
       const asByteInTrees = new Set<string>();
-      connections.forEach(({ bit, byte, tree }) => {
+      connections.forEach(({ byte, tree }) => {
           if (byte === name) {
               asByteInTrees.add(tree || '(None)');
           }
@@ -263,34 +263,48 @@ export function searchPeople(connections: Connection[], query: string): SearchRe
 export function findTreeAKAs(connections: Connection[]): TreeAKA {
   if (!connections || connections.length === 0) return {};
 
-  const treeAKAs: TreeAKA = {};
+  const treeLinks: { [key: string]: string } = {};
   const allTrees = Array.from(new Set(connections.map(c => c.tree || '(None)')));
 
   allTrees.forEach(treeName => {
-    // Ignore '(None)' tree in this logic
-    if (treeName === '(None)') {
-        return;
-    }
-    
-    // Find root bytes for the current tree
+    if (treeName === '(None)') return;
+
     const connectionsInTree = connections.filter(c => (c.tree || '(None)') === treeName);
     const bitNamesInTree = new Set(connectionsInTree.map(c => c.bit));
     const rootBytesInTree = connectionsInTree.filter(c => !bitNamesInTree.has(c.byte));
 
-    // For each root byte, see if they were a bit in another tree
     rootBytesInTree.forEach(rootByteConnection => {
       const connectionAsBit = connections.find(c => c.bit === rootByteConnection.byte);
-
       if (connectionAsBit) {
         const originalTree = connectionAsBit.tree || '(None)';
-        // Also ignore linking to/from the '(None)' tree
         if (originalTree !== treeName && originalTree !== '(None)') {
-            // Found a link: originalTree is AKA the current treeName
-            // We store it so we can look up the "new" name from the "old" one.
-            treeAKAs[originalTree] = treeName;
+          treeLinks[originalTree] = treeName;
         }
       }
     });
+  });
+
+  const treeAKAs: TreeAKA = {};
+  const allOriginals = Object.keys(treeLinks);
+
+  // For each original name, trace its chain to find the final canonical name
+  allOriginals.forEach(originalName => {
+    let currentName = originalName;
+    const visited = new Set([currentName]);
+
+    // Keep following the links until we find a name that is not an original name itself
+    while (treeLinks[currentName]) {
+      currentName = treeLinks[currentName];
+      // Circular dependency detected, break to avoid infinite loop
+      if (visited.has(currentName)) {
+        break;
+      }
+      visited.add(currentName);
+    }
+    // Only add to AKAs if the original name is different from the final name
+    if (originalName !== currentName) {
+      treeAKAs[originalName] = currentName;
+    }
   });
 
   return treeAKAs;
