@@ -13,7 +13,7 @@ import {
   SidebarGroupLabel,
 } from '@/components/ui/sidebar';
 import { TreeViewLogo } from '@/components/icons';
-import { buildTree, getTrees, getAllPeople, findTreeAKAs } from '@/lib/data';
+import { buildTree, getTrees, getAllPeople, findTreeAKAs, findDisconnectedTrees } from '@/lib/data';
 import { TreeSelector } from '@/components/tree-selector';
 import { ConnectionForm } from '@/components/connection-form';
 import { DataManagement } from '@/components/data-management';
@@ -40,6 +40,7 @@ import { ShuffleLayoutButton } from '@/components/shuffle-layout-button';
 import React from 'react';
 import { HelpDialog } from '@/components/help-dialog';
 import Link from 'next/link';
+import { DisconnectedTrees } from '@/components/disconnected-trees';
 
 
 export function TreeViewerPage() {
@@ -91,6 +92,11 @@ export function TreeViewerPage() {
     () => (connections ? getAllPeople(connections) : []),
     [connections]
   );
+
+  const disconnectedTrees = useMemo(
+    () => (connections ? findDisconnectedTrees(connections) : []),
+    [connections]
+  );
   
   const treeData = useMemo(
     () =>
@@ -129,6 +135,10 @@ export function TreeViewerPage() {
             <p className="text-xs text-center text-muted-foreground">Admin Mode</p>
           </SidebarHeader>
           <SidebarContent>
+            <SidebarGroup>
+                <DisconnectedTrees treeNames={disconnectedTrees} />
+            </SidebarGroup>
+            <Separator />
             <SidebarGroup>
               <ConnectionForm
                 currentTree={currentTreeName}

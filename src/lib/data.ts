@@ -319,6 +319,43 @@ export function findTreeAKAs(connections: Connection[]): TreeAKA {
   return treeAKAs;
 }
 
+export function findDisconnectedTrees(connections: Connection[]): string[] {
+  if (!connections || connections.length === 0) {
+    return [];
+  }
+
+  const trees: { [key: string]: Connection[] } = {};
+  connections.forEach(conn => {
+    const treeName = conn.tree || '(None)';
+    if (!trees[treeName]) {
+      trees[treeName] = [];
+    }
+    trees[treeName].push(conn);
+  });
+
+  const disconnectedTreeNames: string[] = [];
+
+  for (const treeName in trees) {
+    if (treeName === '(None)') continue; // Skip the special '(None)' group
+
+    const treeConnections = trees[treeName];
+    const bitsInTree = new Set(treeConnections.map(c => c.bit));
+    const roots = new Set<string>();
+
+    treeConnections.forEach(c => {
+      if (!bitsInTree.has(c.byte)) {
+        roots.add(c.byte);
+      }
+    });
+
+    if (roots.size > 1) {
+      disconnectedTreeNames.push(treeName);
+    }
+  }
+
+  return disconnectedTreeNames.sort();
+}
+
 export const generateId = (): string => {
     return Math.floor(100000 + Math.random() * 900000).toString();
 };
