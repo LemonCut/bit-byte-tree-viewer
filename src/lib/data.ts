@@ -65,6 +65,12 @@ export function buildTree(
   connections: Connection[],
   treeName: string
 ): TreeNode[] {
+  // Do not perform merge logic for the '(None)' tree
+  if (treeName === '(None)') {
+     const treeConnections = connections.filter(c => (c.treeName || '(None)') === '(None)');
+     return buildSingleTree(treeConnections, '(None)');
+  }
+  
   const treeAKAs = findTreeAKAs(connections);
   const originalName = Object.keys(treeAKAs).find(key => treeAKAs[key] === treeName);
 
@@ -127,6 +133,36 @@ export function buildTree(
   );
 
   return finalRootNodes;
+}
+
+// Helper to build a single, non-merged tree. Used for '(None)'
+function buildSingleTree(treeConnections: Connection[], treeName: string): TreeNode[] {
+    const nodes: { [key: string]: TreeNode } = {};
+    const bitsInTree = new Set(treeConnections.map(c => c.bit));
+
+    treeConnections.forEach(({ byte, bit, year }) => {
+        const byteId = byte.replace(/\s+/g, '_');
+        const bitId = bit.replace(/\s+/g, '_');
+
+        if (!nodes[byteId]) {
+            nodes[byteId] = { id: byteId, name: byte, children: [] };
+        }
+        if (!nodes[bitId]) {
+            nodes[bitId] = { id: bitId, name: bit, year, children: [] };
+        } else if (nodes[bitId].year === undefined) {
+            nodes[bitId].year = year;
+        }
+        
+        if (!nodes[byteId].children.some(child => child.id === bitId)) {
+            nodes[byteId].children.push(nodes[bitId]);
+        }
+        
+        if (!bitsInTree.has(byte)) {
+            nodes[byteId].rootOfTreeName = treeName;
+        }
+    });
+
+    return Object.values(nodes).filter(node => !bitsInTree.has(node.name));
 }
 
 
@@ -225,6 +261,11 @@ export function findTreeAKAs(connections: Connection[]): TreeAKA {
   const allTrees = Array.from(new Set(connections.map(c => c.treeName || '(None)')));
 
   allTrees.forEach(treeName => {
+    // Ignore '(None)' tree in this logic
+    if (treeName === '(None)') {
+        return;
+    }
+    
     // Find root bytes for the current tree
     const connectionsInTree = connections.filter(c => (c.treeName || '(None)') === treeName);
     const bitsInTree = new Set(connectionsInTree.map(c => c.bit));
@@ -238,7 +279,8 @@ export function findTreeAKAs(connections: Connection[]): TreeAKA {
 
       if (connectionAsBit) {
         const originalTree = connectionAsBit.treeName || '(None)';
-        if (originalTree !== treeName) {
+        // Also ignore linking to/from the '(None)' tree
+        if (originalTree !== treeName && originalTree !== '(None)') {
             // Found a link: originalTree is AKA the current treeName
             // We store it so we can look up the "new" name from the "old" one.
             treeAKAs[originalTree] = treeName;
@@ -249,3 +291,5 @@ export function findTreeAKAs(connections: Connection[]): TreeAKA {
 
   return treeAKAs;
 }
+
+    

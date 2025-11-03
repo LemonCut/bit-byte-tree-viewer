@@ -62,7 +62,8 @@ export default function Home() {
   );
 
   useEffect(() => {
-    if (treeParam && treeAKAs[treeParam]) {
+    // Exclude '(None)' from redirection logic
+    if (treeParam && treeParam !== '(None)' && treeAKAs[treeParam]) {
       const newTreeName = treeAKAs[treeParam];
       const params = new URLSearchParams(searchParams.toString());
       params.set('tree', newTreeName);
@@ -103,9 +104,12 @@ export default function Home() {
   if (treeParam) {
     pageTitle = `${treeParam} Tree`;
     // Find the original name (key) for the current new name (value)
-    const originalName = Object.keys(treeAKAs).find(key => treeAKAs[key] === treeParam);
-    if (originalName) {
-      pageSubTitle = `Previously... ${originalName} Tree`;
+    // Exclude '(None)' from this logic
+    if (treeParam !== '(None)') {
+        const originalName = Object.keys(treeAKAs).find(key => treeAKAs[key] === treeParam);
+        if (originalName) {
+            pageSubTitle = `Previously... ${originalName} Tree`;
+        }
     }
   }
 
@@ -282,3 +286,5 @@ const OrgChartWrapper = ({ loading, connections, treeData, currentTreeName, tree
     </div>
   )
 }
+
+    
