@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -10,12 +10,24 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore } from '@/firebase';
-import { collection, writeBatch, doc } from 'firebase/firestore';
+import { collection, writeBatch, doc, getDocs } from 'firebase/firestore';
 import type { Connection } from '@/lib/types';
 import Papa from 'papaparse';
-import { Upload, Download } from 'lucide-react';
+import { Upload, Download, Trash2 } from 'lucide-react';
+import { Separator } from './ui/separator';
 
 type DataManagementProps = {
   connections: Connection[];
@@ -25,6 +37,8 @@ export function DataManagement({ connections }: DataManagementProps) {
   const { toast } = useToast();
   const firestore = useFirestore();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [clearDialogOpen, setClearDialogOpen] = useState(false);
+  const [confirmText, setConfirmText] = useState('');
 
   const handleImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -60,7 +74,7 @@ export function DataManagement({ connections }: DataManagementProps) {
           importedRows.forEach((row) => {
             const { bit, byte, tree, year } = row;
             if (bit && byte && tree && year && !isNaN(Number(year))) {
-              const docRef = doc(connectionsCollection); // Auto-generates an ID
+              const docRef = doc(connectionsCollection);
               batch.set(docRef, { bit, byte, tree, year: Number(year) });
               validConnectionsCount++;
             }
@@ -110,7 +124,6 @@ export function DataManagement({ connections }: DataManagementProps) {
       return;
     }
     
-    // We only need to export the core fields
     const exportData = connections.map(({ bit, byte, tree, year }) => ({
       bit,
       byte,
@@ -138,36 +151,113 @@ export function DataManagement({ connections }: DataManagementProps) {
     fileInputRef.current?.click();
   };
 
+  const handleClearDatabase = async () => {
+    if (!firestore) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Database connection not found.',
+      });
+      return;
+    }
+
+    try {
+      const batch = writeBatch(firestore);
+      const querySnapshot = await getDocs(collection(firestore, 'connections'));
+      querySnapshot.forEach((doc) => {
+        batch.delete(doc.ref);
+      });
+      await batch.commit();
+
+      toast({
+        title: 'Success!',
+        description: 'The entire database has been cleared.',
+      });
+    } catch (error) {
+      console.error('Error clearing database: ', error);
+      toast({
+        variant: 'destructive',
+        title: 'Uh oh! Something went wrong.',
+        description: 'There was a problem clearing the database.',
+      });
+    } finally {
+      setClearDialogOpen(false);
+      setConfirmText('');
+    }
+  };
+
   return (
-    <Card className="bg-transparent border-none shadow-none">
-      <CardHeader className="p-0 mb-4">
-        <CardTitle className="text-lg">Data Management</CardTitle>
-        <CardDescription>
-          Import/Export CSV. Required headers: bit, byte, tree, year.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="p-0 flex flex-col space-y-2">
-        <input
-          type="file"
-          accept=".csv"
-          ref={fileInputRef}
-          onChange={handleImport}
-          className="hidden"
-        />
-        <Button
-          onClick={triggerFileSelect}
-          disabled={!firestore}
-        >
-          <Upload className="mr-2 h-4 w-4" /> Import CSV
-        </Button>
-        <Button
-          onClick={handleExport}
-          variant="outline"
-          disabled={connections.length === 0}
-        >
-          <Download className="mr-2 h-4 w-4" /> Export CSV
-        </Button>
-      </CardContent>
-    </Card>
+    <>
+      <Card className="bg-transparent border-none shadow-none">
+        <CardHeader className="p-0 mb-4">
+          <CardTitle className="text-lg">Data Management</CardTitle>
+          <CardDescription>
+            Import/Export CSV. Required headers: bit, byte, tree, year.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-0 flex flex-col space-y-2">
+          <input
+            type="file"
+            accept=".csv"
+            ref={fileInputRef}
+            onChange={handleImport}
+            className="hidden"
+          />
+          <Button
+            onClick={triggerFileSelect}
+            disabled={!firestore}
+          >
+            <Upload className="mr-2 h-4 w-4" /> Import CSV
+          </Button>
+          <Button
+            onClick={handleExport}
+            variant="outline"
+            disabled={connections.length === 0}
+          >
+            <Download className="mr-2 h-4 w-4" /> Export CSV
+          </Button>
+          <Separator className="my-4" />
+          <Button
+            onClick={() => setClearDialogOpen(true)}
+            variant="destructive"
+            className="w-full"
+            disabled={!firestore || connections.length === 0}
+          >
+            <Trash2 className="mr-2 h-4 w-4" /> Clear Entire Database
+          </Button>
+        </CardContent>
+      </Card>
+
+      <AlertDialog open={clearDialogOpen} onOpenChange={setClearDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action is irreversible and will permanently delete all
+              connections from your database. To proceed, please type{' '}
+              <span className="font-bold text-foreground">Confirm</span> below.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <Input
+            value={confirmText}
+            onChange={(e) => setConfirmText(e.target.value)}
+            placeholder='Type "Confirm" to proceed'
+            className="my-2"
+          />
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setConfirmText('')}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleClearDatabase}
+              disabled={confirmText !== 'Confirm'}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              Confirm & Delete All Data
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

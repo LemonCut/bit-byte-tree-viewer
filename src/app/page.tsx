@@ -35,9 +35,7 @@ import { useFirestore } from '@/firebase';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AdminUnlock } from '@/components/admin-unlock';
 import { Button } from '@/components/ui/button';
-import { LogOut, Search, Share2 } from 'lucide-react';
-import { RemovePersonForm } from '@/components/remove-person-form';
-import { ClearDatabase } from '@/components/clear-database';
+import { LogOut, Share2 } from 'lucide-react';
 import { ShuffleLayoutButton } from '@/components/shuffle-layout-button';
 
 
@@ -135,22 +133,6 @@ export default function Home() {
           </SidebarHeader>
           <SidebarContent>
             <SidebarGroup>
-              <SidebarGroupLabel>Select Tree</SidebarGroupLabel>
-              {loading ? (
-                <Skeleton className="h-10 w-full" />
-              ) : (
-                <TreeSelector trees={allTrees} defaultTree={currentTreeName} />
-              )}
-            </SidebarGroup>
-            <Separator />
-             <SidebarGroup>
-                <ShuffleLayoutButton
-                    treeData={shuffledTreeData}
-                    onShuffle={setShuffledTreeData}
-                />
-            </SidebarGroup>
-            <Separator />
-            <SidebarGroup>
               <ConnectionForm
                 currentTree={currentTreeName}
                 allPeople={allPeople}
@@ -162,16 +144,15 @@ export default function Home() {
                 <ModifyConnectionForm connections={connections || []} allPeople={allPeople} />
             </SidebarGroup>
             <Separator />
-             <SidebarGroup>
-                <RemovePersonForm connections={connections || []} allPeople={allPeople} />
+            <SidebarGroup>
+                <ShuffleLayoutButton
+                    treeData={shuffledTreeData}
+                    onShuffle={setShuffledTreeData}
+                />
             </SidebarGroup>
             <Separator />
             <SidebarGroup>
               <DataManagement connections={connections || []} />
-            </SidebarGroup>
-             <Separator />
-            <SidebarGroup>
-              <ClearDatabase connections={connections || []} />
             </SidebarGroup>
           </SidebarContent>
         </Sidebar>
@@ -184,7 +165,14 @@ export default function Home() {
                   {pageSubTitle && <p className="text-sm text-muted-foreground">{pageSubTitle}</p>}
               </div>
             </div>
-            <SearchDialog connections={connections || []} />
+            <div className="flex items-center gap-2">
+              {loading ? (
+                <Skeleton className="h-10 w-[200px]" />
+              ) : (
+                <TreeSelector trees={allTrees} defaultTree={currentTreeName} className="w-[200px]" />
+              )}
+              <SearchDialog connections={connections || []} />
+            </div>
           </header>
           <main className="flex-1 overflow-auto">
             <div className="p-4 md:p-6 lg:p-8 h-full overflow-auto">

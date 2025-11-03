@@ -25,6 +25,16 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -38,7 +48,7 @@ import { useToast } from '@/hooks/use-toast';
 import type { Connection, Person } from '@/lib/types';
 import { useFirestore } from '@/firebase';
 import { collection, doc, writeBatch, query, where, getDocs } from 'firebase/firestore';
-import { Pencil } from 'lucide-react';
+import { Pencil, Trash2 } from 'lucide-react';
 import { Separator } from './ui/separator';
 
 const SearchSchema = z.object({
@@ -71,7 +81,8 @@ export function ModifyConnectionForm({
 }: ModifyConnectionFormProps) {
   const { toast } = useToast();
   const firestore = useFirestore();
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [modifyDialogOpen, setModifyDialogOpen] = useState(false);
+  const [removeWarningOpen, setRemoveWarningOpen] = useState(false);
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
   
   const searchForm = useForm<z.infer<typeof SearchSchema>>({
@@ -111,8 +122,8 @@ export function ModifyConnectionForm({
       originalName: person.name,
       newName: person.name,
     });
-    replace(relatedConnections); // Populate the field array
-    setDialogOpen(true);
+    replace(relatedConnections);
+    setModifyDialogOpen(true);
   }
 
   async function onModify(data: z.infer<typeof ModifySchema>) {
@@ -122,39 +133,52 @@ export function ModifyConnectionForm({
 
     try {
       const batch = writeBatch(firestore);
+      
+      if (originalName !== newName) {
+        // Update name where the person is a 'bit'
+        const bitQuery = query(collection(firestore, 'connections'), where('bit', '==', originalName));
+        const bitQuerySnapshot = await getDocs(bitQuery);
+        bitQuerySnapshot.forEach((doc) => {
+          batch.update(doc.ref, { bit: newName });
+        });
 
-      // Update name where the person is a 'bit'
-      const bitQuery = query(collection(firestore, 'connections'), where('bit', '==', originalName));
-      const bitQuerySnapshot = await getDocs(bitQuery);
-      bitQuerySnapshot.forEach((doc) => {
-        batch.update(doc.ref, { bit: newName });
-      });
-
-      // Update name where the person is a 'byte'
-      const byteQuery = query(collection(firestore, 'connections'), where('byte', '==', originalName));
-      const byteQuerySnapshot = await getDocs(byteQuery);
-      byteQuerySnapshot.forEach((doc) => {
-        batch.update(doc.ref, { byte: newName });
-      });
+        // Update name where the person is a 'byte'
+        const byteQuery = query(collection(firestore, 'connections'), where('byte', '==', originalName));
+        const byteQuerySnapshot = await getDocs(byteQuery);
+        byteQuerySnapshot.forEach((doc) => {
+          batch.update(doc.ref, { byte: newName });
+        });
+      }
 
       // Update individual connections from the form
       modifiedConnections.forEach(conn => {
         const docRef = doc(firestore, 'connections', conn.id);
-        batch.update(docRef, {
-            bit: conn.bit === originalName ? newName : conn.bit,
-            byte: conn.byte === originalName ? newName : conn.byte,
-            tree: conn.tree,
-            year: conn.year,
-        });
+        const originalConnection = connections.find(c => c.id === conn.id);
+
+        if(originalConnection) {
+            const updatedData: Partial<Connection> = {};
+            if (originalConnection.tree !== conn.tree) updatedData.tree = conn.tree;
+            if (originalConnection.year !== conn.year) updatedData.year = conn.year;
+            
+            // Re-check names in case they were changed
+            const finalBit = conn.bit === originalName ? newName : conn.bit;
+            const finalByte = conn.byte === originalName ? newName : conn.byte;
+            if (originalConnection.bit !== finalBit) updatedData.bit = finalBit;
+            if (originalConnection.byte !== finalByte) updatedData.byte = finalByte;
+
+            if (Object.keys(updatedData).length > 0) {
+                 batch.update(docRef, updatedData);
+            }
+        }
       });
 
       await batch.commit();
       
       toast({
         title: 'Success!',
-        description: `'${originalName}' has been renamed to '${newName}' and connections updated.`,
+        description: `Details for '${originalName}' have been updated.`,
       });
-      setDialogOpen(false);
+      setModifyDialogOpen(false);
       searchForm.reset();
 
     } catch (error) {
@@ -167,6 +191,42 @@ export function ModifyConnectionForm({
     }
   }
 
+  const handleConfirmDelete = async () => {
+    if (!firestore || !selectedPerson) return;
+    const personToDelete = selectedPerson.name;
+
+    try {
+      const batch = writeBatch(firestore);
+
+      const bitQuery = query(collection(firestore, 'connections'), where('bit', '==', personToDelete));
+      const bitQuerySnapshot = await getDocs(bitQuery);
+      bitQuerySnapshot.forEach((doc) => batch.delete(doc.ref));
+
+      const byteQuery = query(collection(firestore, 'connections'), where('byte', '==', personToDelete));
+      const byteQuerySnapshot = await getDocs(byteQuery);
+      byteQuerySnapshot.forEach((doc) => batch.delete(doc.ref));
+      
+      await batch.commit();
+
+      toast({
+        title: 'Success!',
+        description: `Successfully removed '${personToDelete}' and all associated connections.`,
+      });
+      setModifyDialogOpen(false);
+      searchForm.reset();
+    } catch (error) {
+      console.error("Error removing documents: ", error);
+      toast({
+        variant: 'destructive',
+        title: 'Uh oh! Something went wrong.',
+        description: 'There was a problem removing the person.',
+      });
+    } finally {
+      setRemoveWarningOpen(false);
+      setSelectedPerson(null);
+    }
+  };
+
   const allPeopleNames = useMemo(() => allPeople.map(p => p.name), [allPeople]);
   const allTrees = useMemo(() => Array.from(new Set(connections.map(c => c.tree || ''))).filter(Boolean), [connections]);
 
@@ -174,9 +234,9 @@ export function ModifyConnectionForm({
     <>
       <Card className="bg-transparent border-none shadow-none">
         <CardHeader className="p-0 mb-4">
-          <CardTitle className="text-lg">Modify Person / Connections</CardTitle>
+          <CardTitle className="text-lg">Modify / Remove</CardTitle>
           <CardDescription>
-            Find a person to edit their name or associated connections.
+            Find a person to edit their name, connections, or remove them.
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0">
@@ -208,7 +268,7 @@ export function ModifyConnectionForm({
         </CardContent>
       </Card>
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <Dialog open={modifyDialogOpen} onOpenChange={setModifyDialogOpen}>
         <DialogContent className="sm:max-w-[425px] md:max-w-[600px]">
           <DialogHeader>
             <DialogTitle>Modify Details for {selectedPerson?.name}</DialogTitle>
@@ -279,7 +339,10 @@ export function ModifyConnectionForm({
                     <Button type="submit" className="w-full">Save All Changes</Button>
                 </form>
             </Form>
-          <DialogFooter className="sm:justify-end">
+          <DialogFooter className="sm:justify-between mt-4">
+            <Button variant="destructive" onClick={() => setRemoveWarningOpen(true)}>
+              <Trash2 className="mr-2 h-4 w-4" /> Remove {selectedPerson?.name}
+            </Button>
             <DialogClose asChild>
               <Button type="button" variant="secondary">
                 Close
@@ -288,6 +351,27 @@ export function ModifyConnectionForm({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      
+      <AlertDialog open={removeWarningOpen} onOpenChange={setRemoveWarningOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete '{selectedPerson?.name}' and all their
+              connections from the database. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              Confirm & Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
