@@ -136,10 +136,6 @@ export function TreeViewerPage() {
           </SidebarHeader>
           <SidebarContent>
             <SidebarGroup>
-                <DisconnectedTrees treeNames={disconnectedTrees} />
-            </SidebarGroup>
-            <Separator />
-            <SidebarGroup>
               <ConnectionForm
                 currentTree={currentTreeName}
                 allPeople={allPeople}
@@ -160,6 +156,10 @@ export function TreeViewerPage() {
             <Separator />
             <SidebarGroup>
               <DataManagement connections={connections || []} />
+            </SidebarGroup>
+            <Separator />
+            <SidebarGroup>
+                <DisconnectedTrees treeNames={disconnectedTrees} />
             </SidebarGroup>
           </SidebarContent>
         </Sidebar>

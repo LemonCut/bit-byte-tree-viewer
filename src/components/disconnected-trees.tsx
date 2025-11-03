@@ -22,14 +22,14 @@ export function DisconnectedTrees({ treeNames }: DisconnectedTreesProps) {
   }
 
   return (
-    <Card className="bg-destructive/10 border-destructive/50">
+    <Card className="bg-muted/50 border-border">
       <CardHeader className="p-4 pb-2">
         <div className="flex items-center gap-2">
-            <AlertCircle className="w-5 h-5 text-destructive" />
-            <CardTitle className="text-lg text-destructive">Disconnected Trees</CardTitle>
-            <Badge variant="destructive" className="h-6 w-6 rounded-full p-0 flex items-center justify-center">{treeNames.length}</Badge>
+            <AlertCircle className="w-5 h-5 text-muted-foreground" />
+            <CardTitle className="text-lg text-muted-foreground">Disconnected Trees</CardTitle>
+            <Badge variant="secondary" className="h-6 w-6 rounded-full p-0 flex items-center justify-center">{treeNames.length}</Badge>
         </div>
-        <CardDescription className="text-destructive/90">
+        <CardDescription>
           These trees have multiple roots and may not be fully connected.
         </CardDescription>
       </CardHeader>
@@ -39,7 +39,7 @@ export function DisconnectedTrees({ treeNames }: DisconnectedTreesProps) {
             <li key={treeName}>
               <Link
                 href={`/?tree=${encodeURIComponent(treeName)}`}
-                className="hover:underline text-destructive/90 hover:text-destructive font-medium"
+                className="hover:underline text-muted-foreground hover:text-foreground font-medium"
               >
                 {treeName}
               </Link>
