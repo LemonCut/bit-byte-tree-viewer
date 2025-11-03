@@ -39,6 +39,7 @@ import { LogOut, Share2 } from 'lucide-react';
 import { ShuffleLayoutButton } from '@/components/shuffle-layout-button';
 import React from 'react';
 import { HelpDialog } from '@/components/help-dialog';
+import Link from 'next/link';
 
 
 export function TreeViewerPage() {
@@ -117,10 +118,10 @@ export function TreeViewerPage() {
         <Sidebar>
           <SidebarHeader>
             <div className="flex items-center justify-between p-2">
-                <div className="flex items-center gap-2">
+                <Link href="/" className="flex items-center gap-2">
                     <TreeViewLogo className="w-8 h-8" />
                     <h1 className="text-xl font-bold">Bit-Byte Tree Viewer</h1>
-                </div>
+                </Link>
                 <Button variant="ghost" size="icon" onClick={handleAdminToggle} title="Lock Admin View">
                     <LogOut />
                 </Button>
@@ -194,10 +195,10 @@ export function TreeViewerPage() {
   return (
     <div className="flex flex-col h-screen">
       <header className="flex items-center justify-between p-4 border-b sticky top-0 bg-background/80 backdrop-blur-sm z-20 h-16 shrink-0">
-        <div className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2">
           <TreeViewLogo className="w-8 h-8" />
           <h1 className="text-xl font-bold">Bit-Byte Tree Viewer</h1>
-        </div>
+        </Link>
         <div className="flex items-center gap-2">
           <SearchDialog connections={connections || []} />
         </div>
