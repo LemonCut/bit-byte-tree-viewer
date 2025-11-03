@@ -119,7 +119,7 @@ export default function Home() {
             <div className="flex items-center justify-between p-2">
                 <div className="flex items-center gap-2">
                     <TreeViewLogo className="w-8 h-8" />
-                    <h1 className="text-2xl font-bold">TreeView</h1>
+                    <h1 className="text-xl font-bold">Bit-Byte Tree Viewer</h1>
                 </div>
                 <Button variant="ghost" size="icon" onClick={handleAdminToggle} title="Lock Admin View">
                     <LogOut />
@@ -196,7 +196,7 @@ export default function Home() {
       <header className="flex items-center justify-between p-4 border-b sticky top-0 bg-background/80 backdrop-blur-sm z-20 h-16 shrink-0">
         <div className="flex items-center gap-2">
           <TreeViewLogo className="w-8 h-8" />
-          <h1 className="text-2xl font-bold">TreeView</h1>
+          <h1 className="text-xl font-bold">Bit-Byte Tree Viewer</h1>
         </div>
         <div className="flex items-center gap-2">
           <SearchDialog connections={connections || []} />
@@ -240,7 +240,7 @@ const OrgChartWrapper = ({ loading, connections, treeData, currentTreeName, tree
                     <div className="mx-auto bg-primary/20 p-3 rounded-full w-fit">
                         <Share2 className="w-8 h-8 text-primary" />
                     </div>
-                    <CardTitle className="mt-4">Welcome to TreeView</CardTitle>
+                    <CardTitle className="mt-4">Welcome to Bit-Byte Tree Viewer</CardTitle>
                     <CardDescription>
                         To get started, select a tree from the dropdown menu at the top right, or use the search icon to find a specific person.
                     </CardDescription>

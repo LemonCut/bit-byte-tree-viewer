@@ -35,7 +35,7 @@ export function HelpDialog() {
           <DialogHeader>
             <DialogTitle>Help & Support</DialogTitle>
             <DialogDescription>
-              For any bugs, inaccuracies, or suggestions, please DM lemoncut on Discord.
+              To report any bugs, inaccuracies, or provide suggestions, please DM @lemoncut on Discord.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

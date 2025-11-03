@@ -4,7 +4,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { FirebaseClientProvider } from '@/firebase';
 
 export const metadata: Metadata = {
-  title: 'TreeView',
+  title: 'Bit-Byte Tree Viewer',
   description: 'Visualize your organizational structures.',
 };
 
