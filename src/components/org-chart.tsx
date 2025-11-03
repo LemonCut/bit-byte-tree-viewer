@@ -98,7 +98,7 @@ export function OrgChart({ data, currentTreeName, onNodeSelect, isAdmin }: OrgCh
                     const dataTable = chartWrapper.getDataTable();
                     if (dataTable) {
                         const personId = dataTable.getValue(selectedRow, 0);
-                        const cli = chart.getChartLayoutInterface();
+                        const cli = chartWrapper.getChartLayoutInterface();
                         const boundingBox = cli.getBoundingBox(`bar#0#${selectedRow}`);
                         
                         setSelectedNode({
