@@ -65,14 +65,14 @@ export default function Home() {
   );
 
   useEffect(() => {
-    // Exclude '(None)' from redirection logic
-    if (treeParam && treeParam !== '(None)' && treeAKAs[treeParam]) {
+    // Exclude '(None)' from redirection logic and disable when in admin mode
+    if (!isAdmin && treeParam && treeParam !== '(None)' && treeAKAs[treeParam]) {
       const newTreeName = treeAKAs[treeParam];
       const params = new URLSearchParams(searchParams.toString());
       params.set('tree', newTreeName);
       router.replace(`${pathname}?${params.toString()}`);
     }
-  }, [treeParam, treeAKAs, router, pathname, searchParams]);
+  }, [isAdmin, treeParam, treeAKAs, router, pathname, searchParams]);
 
 
   const { allTrees } = useMemo(
