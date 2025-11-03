@@ -68,9 +68,12 @@ export default function Home() {
     // Exclude '(None)' from redirection logic and disable when in admin mode
     if (!isAdmin && treeParam && treeParam !== '(None)' && treeAKAs[treeParam]) {
       const newTreeName = treeAKAs[treeParam];
-      const params = new URLSearchParams(searchParams.toString());
-      params.set('tree', newTreeName);
-      router.replace(`${pathname}?${params.toString()}`);
+      // Only redirect if the current URL param is an old alias
+      if (treeParam !== newTreeName) {
+          const params = new URLSearchParams(searchParams.toString());
+          params.set('tree', newTreeName);
+          router.replace(`${pathname}?${params.toString()}`);
+      }
     }
   }, [isAdmin, treeParam, treeAKAs, router, pathname, searchParams]);
 

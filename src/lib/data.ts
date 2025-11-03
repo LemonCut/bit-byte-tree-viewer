@@ -74,11 +74,12 @@ export function buildTree(
   }
   
   const treeAKAs = findTreeAKAs(connections);
-  const originalName = Object.keys(treeAKAs).find(key => treeAKAs[key] === treeName);
-
-  const treeNamesToBuild = [treeName];
-  if (originalName) {
-    treeNamesToBuild.push(originalName);
+  // Find all tree names that are equivalent to the selected treeName
+  const equivalentTreeNames = new Set([treeName]);
+  for (const aka in treeAKAs) {
+    if (treeAKAs[aka] === treeName) {
+      equivalentTreeNames.add(aka);
+    }
   }
 
   const allNodes: { [key: string]: TreeNode } = {};
@@ -113,20 +114,22 @@ export function buildTree(
     });
   };
 
-  // Process connections for each relevant tree
-  treeNamesToBuild.forEach(name => {
+  // Process connections for each equivalent tree name
+  equivalentTreeNames.forEach(name => {
     const relevantConnections = connections.filter(c => (c.tree || '(None)') === name);
     processTreeConnections(relevantConnections, name);
   });
+
 
   if (Object.keys(allNodes).length === 0) return [];
 
   // Determine the final root nodes for the entire merged structure
   const allBitNamesInMergedTree = new Set<string>();
-  treeNamesToBuild.forEach(name => {
-    connections.filter(c => (c.tree || '(None)') === name)
-               .forEach(c => allBitNamesInMergedTree.add(c.bit));
-  });
+  
+  connections
+    .filter(c => equivalentTreeNames.has(c.tree || '(None)'))
+    .forEach(c => allBitNamesInMergedTree.add(c.bit));
+
 
   const finalRootNodes = Object.values(allNodes).filter(
     (node) => !allBitNamesInMergedTree.has(node.name)
@@ -278,6 +281,8 @@ export function findTreeAKAs(connections: Connection[]): TreeAKA {
       if (connectionAsBit) {
         const originalTree = connectionAsBit.tree || '(None)';
         if (originalTree !== treeName && originalTree !== '(None)') {
+          // Here, 'treeName' is the newer name, 'originalTree' is the older one.
+          // The link should point from old to new.
           treeLinks[originalTree] = treeName;
         }
       }
@@ -285,11 +290,11 @@ export function findTreeAKAs(connections: Connection[]): TreeAKA {
   });
 
   const treeAKAs: TreeAKA = {};
-  const allOriginals = Object.keys(treeLinks);
+  const allOriginals = Array.from(new Set([...Object.keys(treeLinks), ...Object.values(treeLinks)]));
 
-  // For each original name, trace its chain to find the final canonical name
-  allOriginals.forEach(originalName => {
-    let currentName = originalName;
+  // For each tree name, trace its chain to find the final canonical name
+  allOriginals.forEach(startName => {
+    let currentName = startName;
     const visited = new Set([currentName]);
 
     // Keep following the links until we find a name that is not an original name itself
@@ -297,14 +302,12 @@ export function findTreeAKAs(connections: Connection[]): TreeAKA {
       currentName = treeLinks[currentName];
       // Circular dependency detected, break to avoid infinite loop
       if (visited.has(currentName)) {
-        break;
+        break; 
       }
       visited.add(currentName);
     }
-    // Only add to AKAs if the original name is different from the final name
-    if (originalName !== currentName) {
-      treeAKAs[originalName] = currentName;
-    }
+    // Map the starting name to the final canonical name found
+    treeAKAs[startName] = currentName;
   });
 
   return treeAKAs;
