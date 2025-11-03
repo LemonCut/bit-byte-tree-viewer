@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo, useState, useEffect } from 'react';
@@ -16,7 +17,6 @@ import { buildTree, getTrees, getBits, getAllPeople, getBytes, findTreeAKAs } fr
 import { TreeSelector } from '@/components/tree-selector';
 import { ConnectionForm } from '@/components/connection-form';
 import { DataManagement } from '@/components/data-management';
-import { RemovePersonForm } from '@/components/remove-person-form';
 import { ModifyConnectionForm } from '@/components/modify-connection-form';
 import { OrgChart } from '@/components/org-chart';
 import { Separator } from '@/components/ui/separator';
@@ -27,7 +27,7 @@ import {
   CardDescription,
   CardContent,
 } from '@/components/ui/card';
-import type { Connection } from '@/lib/types';
+import type { Connection, Person } from '@/lib/types';
 import { SearchDialog } from '@/components/search-dialog';
 import { useCollection, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
@@ -79,20 +79,11 @@ export default function Home() {
   
   const currentTreeName = treeParam || allTrees[0] || 'No Trees Found';
 
-  const allBits = useMemo(
-    () => (connections ? getBits(connections) : []),
-    [connections]
-  );
-  const allBytes = useMemo(
-    () => (connections ? getBytes(connections) : []),
-    [connections]
-  );
   const allPeople = useMemo(
     () => (connections ? getAllPeople(connections) : []),
     [connections]
   );
   
-
   const treeData = useMemo(
     () =>
       connections && treeParam ? buildTree(connections, treeParam) : [],
@@ -147,22 +138,18 @@ export default function Home() {
             <SidebarGroup>
               <ConnectionForm
                 currentTree={currentTreeName}
-                allBits={allBits}
+                allPeople={allPeople}
                 connections={connections || []}
                 allTrees={allTrees}
               />
             </SidebarGroup>
             <Separator />
             <SidebarGroup>
-              <RemovePersonForm allBits={allBits} connections={connections || []} />
-            </SidebarGroup>
-             <Separator />
-            <SidebarGroup>
-                <ModifyConnectionForm allBits={allBits} allBytes={allBytes} allTrees={allTrees} connections={connections || []} />
+                <ModifyConnectionForm allPeople={allPeople} allTrees={allTrees} connections={connections || []} />
             </SidebarGroup>
             <Separator />
             <SidebarGroup>
-              <DataManagement connections={connections || []} />
+              <DataManagement connections={connections || []} allPeople={allPeople} />
             </SidebarGroup>
           </SidebarContent>
         </Sidebar>
@@ -286,5 +273,3 @@ const OrgChartWrapper = ({ loading, connections, treeData, currentTreeName, tree
     </div>
   )
 }
-
-    

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useRef } from 'react';
@@ -12,15 +13,17 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore } from '@/firebase';
 import { collection, writeBatch, doc } from 'firebase/firestore';
-import type { Connection } from '@/lib/types';
+import type { Connection, Person } from '@/lib/types';
+import { generateId } from '@/lib/data';
 import Papa from 'papaparse';
 import { Upload, Download } from 'lucide-react';
 
 type DataManagementProps = {
   connections: Connection[];
+  allPeople: Person[];
 };
 
-export function DataManagement({ connections }: DataManagementProps) {
+export function DataManagement({ connections, allPeople }: DataManagementProps) {
   const { toast } = useToast();
   const firestore = useFirestore();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -40,9 +43,9 @@ export function DataManagement({ connections }: DataManagementProps) {
       header: true,
       skipEmptyLines: true,
       complete: async (results) => {
-        const newConnections = results.data as any[];
+        const importedRows = results.data as any[];
         
-        if (newConnections.length === 0) {
+        if (importedRows.length === 0) {
           toast({
             variant: 'destructive',
             title: 'Import Error',
@@ -56,16 +59,50 @@ export function DataManagement({ connections }: DataManagementProps) {
           const connectionsCollection = collection(firestore, 'connections');
           let validConnectionsCount = 0;
 
-          newConnections.forEach((conn) => {
-            // Validate required fields and convert year to a number
-            const year = Number(conn.year);
-            if (conn.byte && conn.bit && conn.tree && !isNaN(year)) {
+          // Name to ID mapping to handle existing and new people
+          const personNameToIdMap = new Map<string, string[]>();
+          allPeople.forEach(p => {
+              if (!personNameToIdMap.has(p.name)) {
+                  personNameToIdMap.set(p.name, []);
+              }
+              personNameToIdMap.get(p.name)!.push(p.id);
+          });
+          
+          // Function to get or create an ID for a person
+          const getOrCreateId = (name: string): string => {
+            // Simple case: name doesn't exist yet.
+            if (!personNameToIdMap.has(name)) {
+                const newId = generateId();
+                personNameToIdMap.set(name, [newId]);
+                return newId;
+            }
+            
+            // Name exists. For this simple import, we'll assume we reuse the first ID found.
+            // A more complex import might need UI to resolve duplicates.
+            return personNameToIdMap.get(name)![0];
+          };
+
+
+          importedRows.forEach((row) => {
+            // CSV might have old format or new format
+            const bitName = row.bitName || row.bit;
+            const byteName = row.byteName || row.byte;
+            const treeName = row.treeName || row.tree;
+            const year = Number(row.year);
+
+            if (bitName && byteName && treeName && !isNaN(year)) {
                const docRef = doc(connectionsCollection);
+
+               const bitId = row.bitId || getOrCreateId(bitName);
+               const byteId = row.byteId || getOrCreateId(byteName);
+               
                batch.set(docRef, { 
-                   byte: conn.byte,
-                   bit: conn.bit,
-                   treeName: conn.tree,
-                   year: year 
+                   bitId,
+                   bitName,
+                   byteId,
+                   byteName,
+                   treeName,
+                   year,
                 });
                validConnectionsCount++;
             }
@@ -81,7 +118,7 @@ export function DataManagement({ connections }: DataManagementProps) {
              toast({
                 variant: 'destructive',
                 title: 'Import Failed',
-                description: 'No valid connections found in the CSV file to import.',
+                description: 'No valid connections found in the CSV file to import. Required headers: bitName, byteName, treeName, year.',
             });
           }
 
@@ -115,11 +152,13 @@ export function DataManagement({ connections }: DataManagementProps) {
       return;
     }
     
-    // We only want to export the core fields, not Firestore-specific ones like `id`
-    const exportData = connections.map(({ byte, bit, treeName, year }) => ({
-        bit,
-        byte,
-        tree: treeName,
+    // We export the new format with IDs
+    const exportData = connections.map(({ bitId, bitName, byteId, byteName, treeName, year }) => ({
+        bitId,
+        bitName,
+        byteId,
+        byteName,
+        treeName,
         year,
     }));
 
@@ -128,7 +167,7 @@ export function DataManagement({ connections }: DataManagementProps) {
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
-    link.setAttribute('download', 'connections.csv');
+    link.setAttribute('download', 'connections_export.csv');
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -148,7 +187,7 @@ export function DataManagement({ connections }: DataManagementProps) {
       <CardHeader className="p-0 mb-4">
         <CardTitle className="text-lg">Data Management</CardTitle>
         <CardDescription>
-          Import or export your data. CSV must include headers: bit, byte, tree, year.
+          Import/Export CSV. Headers: bitId, bitName, byteId, byteName, treeName, year.
         </CardDescription>
       </CardHeader>
       <CardContent className="p-0 flex flex-col space-y-2">

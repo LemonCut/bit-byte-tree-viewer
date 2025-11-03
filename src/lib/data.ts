@@ -1,5 +1,5 @@
 
-import type { Connection, TreeNode, SearchResult, TreeAKA } from '@/lib/types';
+import type { Connection, TreeNode, SearchResult, TreeAKA, Person } from '@/lib/types';
 
 // This file is now primarily for the data transformation logic.
 // The data itself will be managed in the component's state.
@@ -29,37 +29,44 @@ export function getTrees(connections: Connection[], treeAKAs: TreeAKA = {}): { a
   };
 }
 
-export function getAllPeople(connections: Connection[]): string[] {
-  const people = new Set<string>();
+export function getAllPeople(connections: Connection[]): Person[] {
+  const peopleMap = new Map<string, Person>();
   connections.forEach((c) => {
-    people.add(c.byte);
-    people.add(c.bit);
+    if (!peopleMap.has(c.bitId)) {
+        peopleMap.set(c.bitId, { id: c.bitId, name: c.bitName });
+    }
+     if (!peopleMap.has(c.byteId)) {
+        peopleMap.set(c.byteId, { id: c.byteId, name: c.byteName });
+    }
   });
-  return Array.from(people).sort();
+  return Array.from(peopleMap.values()).sort((a, b) => a.name.localeCompare(b.name));
 }
 
-export function getBytes(connections: Connection[]): string[] {
-  const bytes = new Set<string>();
+export function getBytes(connections: Connection[]): Person[] {
+  const bytesMap = new Map<string, Person>();
   connections.forEach((c) => {
-    bytes.add(c.byte);
+    if (!bytesMap.has(c.byteId)) {
+      bytesMap.set(c.byteId, { id: c.byteId, name: c.byteName });
+    }
   });
-  return Array.from(bytes).sort();
+  return Array.from(bytesMap.values()).sort((a, b) => a.name.localeCompare(b.name));
 }
 
 
-export function getBits(connections: Connection[]): string[] {
-  const bits = new Set<string>();
+export function getBits(connections: Connection[]): Person[] {
+  const bitsMap = new Map<string, Person>();
   connections.forEach((c) => {
-    bits.add(c.bit);
+     if (!bitsMap.has(c.bitId)) {
+      bitsMap.set(c.bitId, { id: c.bitId, name: c.bitName });
+    }
   });
-  return Array.from(bits).sort();
+  return Array.from(bitsMap.values()).sort((a, b) => a.name.localeCompare(b.name));
 }
 
-export function findBitInOtherTrees(connections: Connection[], bitName: string, currentTree: string): string | null {
-  const connection = connections.find(c => c.bit === bitName && c.treeName !== currentTree);
+export function findBitInOtherTrees(connections: Connection[], bitId: string, currentTree: string): string | null {
+  const connection = connections.find(c => c.bitId === bitId && c.treeName !== currentTree);
   return connection ? connection.treeName : null;
 }
-
 
 export function buildTree(
   connections: Connection[],
@@ -86,17 +93,15 @@ export function buildTree(
     treeConnections: Connection[],
     currentTreeName: string
   ) => {
-    const bitsInTree = new Set(treeConnections.map(c => c.bit));
+    const bitsInTree = new Set(treeConnections.map(c => c.bitId));
 
-    treeConnections.forEach(({ byte, bit, year }) => {
-      const byteId = byte.replace(/\s+/g, '_');
-      const bitId = bit.replace(/\s+/g, '_');
-
+    treeConnections.forEach(({ byteId, byteName, bitId, bitName, year }) => {
+      
       if (!allNodes[byteId]) {
-        allNodes[byteId] = { id: byteId, name: byte, children: [] };
+        allNodes[byteId] = { id: byteId, name: byteName, children: [] };
       }
       if (!allNodes[bitId]) {
-        allNodes[bitId] = { id: bitId, name: bit, year, children: [] };
+        allNodes[bitId] = { id: bitId, name: bitName, year, children: [] };
       } else if (allNodes[bitId].year === undefined) {
         allNodes[bitId].year = year;
       }
@@ -107,7 +112,7 @@ export function buildTree(
       }
       
       // Identify and tag root of the *current* tree
-      if (!bitsInTree.has(byte)) {
+      if (!bitsInTree.has(byteId)) {
         allNodes[byteId].rootOfTreeName = currentTreeName;
       }
     });
@@ -122,14 +127,14 @@ export function buildTree(
   if (Object.keys(allNodes).length === 0) return [];
 
   // Determine the final root nodes for the entire merged structure
-  const allBitsInMergedTree = new Set<string>();
+  const allBitIdsInMergedTree = new Set<string>();
   treeNamesToBuild.forEach(name => {
     connections.filter(c => (c.treeName || '(None)') === name)
-               .forEach(c => allBitsInMergedTree.add(c.bit));
+               .forEach(c => allBitIdsInMergedTree.add(c.bitId));
   });
 
   const finalRootNodes = Object.values(allNodes).filter(
-    (node) => !allBitsInMergedTree.has(node.name)
+    (node) => !allBitIdsInMergedTree.has(node.id)
   );
 
   return finalRootNodes;
@@ -138,17 +143,14 @@ export function buildTree(
 // Helper to build a single, non-merged tree. Used for '(None)'
 function buildSingleTree(treeConnections: Connection[], treeName: string): TreeNode[] {
     const nodes: { [key: string]: TreeNode } = {};
-    const bitsInTree = new Set(treeConnections.map(c => c.bit));
+    const bitsInTree = new Set(treeConnections.map(c => c.bitId));
 
-    treeConnections.forEach(({ byte, bit, year }) => {
-        const byteId = byte.replace(/\s+/g, '_');
-        const bitId = bit.replace(/\s+/g, '_');
-
+    treeConnections.forEach(({ byteId, byteName, bitId, bitName, year }) => {
         if (!nodes[byteId]) {
-            nodes[byteId] = { id: byteId, name: byte, children: [] };
+            nodes[byteId] = { id: byteId, name: byteName, children: [] };
         }
         if (!nodes[bitId]) {
-            nodes[bitId] = { id: bitId, name: bit, year, children: [] };
+            nodes[bitId] = { id: bitId, name: bitName, year, children: [] };
         } else if (nodes[bitId].year === undefined) {
             nodes[bitId].year = year;
         }
@@ -157,23 +159,29 @@ function buildSingleTree(treeConnections: Connection[], treeName: string): TreeN
             nodes[byteId].children.push(nodes[bitId]);
         }
         
-        if (!bitsInTree.has(byte)) {
+        if (!bitsInTree.has(byteId)) {
             nodes[byteId].rootOfTreeName = treeName;
         }
     });
 
-    return Object.values(nodes).filter(node => !bitsInTree.has(node.name));
+    return Object.values(nodes).filter(node => !bitsInTree.has(node.id));
 }
 
 
 function generateTooltip(person: SearchResult): string {
-    const name = person.name;
+    const name = `${person.name} (ID: ${person.id})`;
     const treeInfo = person.connections.map(conn => {
         if (conn.isRoot) {
             return `${conn.treeName} (Root)`;
         }
-        return `${conn.treeName} (${conn.year} - ${conn.byte}'s Bit)`;
+        const role = conn.isBit ? 'Bit' : 'Byte';
+        const otherPerson = conn.otherPersonName;
+        if (role === 'Bit') {
+            return `${conn.treeName} (${conn.year} - ${otherPerson}'s Bit)`;
+        }
+        return `${conn.treeName} (Bit to ${otherPerson})`;
     }).join('\n');
+
     return `${name}\nTree(s):\n${treeInfo}`;
 }
 
@@ -184,63 +192,57 @@ export function searchPeople(connections: Connection[], query: string): SearchRe
   const lowerCaseQuery = query.toLowerCase();
   const people = new Map<string, SearchResult>();
 
-  connections.forEach(({ id, bit, byte, treeName, year }) => {
-    const bitId = bit.replace(/\s+/g, '_');
-    const byteId = byte.replace(/\s+/g, '_');
+  connections.forEach(({ id: connectionId, bitId, bitName, byteId, byteName, treeName, year }) => {
     const currentTreeName = treeName || '(None)';
     
-    // Check bit
-    if (bit.toLowerCase().includes(lowerCaseQuery)) {
-      if (!people.has(bit)) {
-        people.set(bit, {
-          name: bit,
-          id: bitId,
-          connections: [],
-          tooltip: ''
-        });
-      }
-      people.get(bit)!.connections.push({
-        treeName: currentTreeName,
-        year: year,
-        byte: byte,
-        isRoot: false,
-        id: id
-      });
-    }
-
-    // Check byte
-    if (byte.toLowerCase().includes(lowerCaseQuery)) {
-      const isRoot = !connections.some(c => c.bit === byte && (c.treeName || '(None)') === currentTreeName);
-
-      if (!people.has(byte)) {
-        people.set(byte, {
-          name: byte,
-          id: byteId,
-          connections: [],
-          tooltip: ''
-        });
-      }
-      
-      const existingConnection = people.get(byte)!.connections.find(c => c.treeName === currentTreeName);
-      if (!existingConnection) {
-         // Find if this byte is a bit in the same tree to avoid duplicate entries
-        const isAlsoBitInSameTree = connections.some(c => c.bit === byte && (c.treeName || '(None)') === currentTreeName);
-        if (!isAlsoBitInSameTree) {
-            people.get(byte)!.connections.push({
-                treeName: currentTreeName,
-                isRoot: isRoot,
-                byte: null,
-                year: null,
-                id: id
+    // Function to initialize a person in the map if they don't exist
+    const ensurePerson = (personId: string, personName: string) => {
+        if (!people.has(personId)) {
+            people.set(personId, {
+                id: personId,
+                name: personName,
+                connections: [],
+                tooltip: ''
             });
         }
-      } else if (existingConnection.isRoot === false && isRoot) {
-          // If we have a non-root entry but determine it's a root, update it.
-          // This case is unlikely if data is processed linearly but good for safety.
-          existingConnection.isRoot = true;
-          existingConnection.byte = null;
-          existingConnection.year = null;
-      }
+    };
+
+    // Check if query matches name or ID
+    const bitMatches = bitName.toLowerCase().includes(lowerCaseQuery) || bitId.includes(lowerCaseQuery);
+    const byteMatches = byteName.toLowerCase().includes(lowerCaseQuery) || byteId.includes(lowerCaseQuery);
+
+    if (bitMatches) {
+        ensurePerson(bitId, bitName);
+        people.get(bitId)!.connections.push({
+            treeName: currentTreeName,
+            year: year,
+            isBit: true,
+            isByte: false,
+            otherPersonName: byteName,
+            isRoot: false, // A bit is never a root in its own connection
+            connectionId: connectionId,
+        });
+    }
+
+    if (byteMatches) {
+        ensurePerson(byteId, byteName);
+        const isRoot = !connections.some(c => c.bitId === byteId && (c.treeName || '(None)') === currentTreeName);
+        
+        // Avoid adding a duplicate connection entry if the person is both a byte and bit in different contexts
+        const existingConnections = people.get(byteId)!.connections;
+        const connectionExists = existingConnections.some(c => c.connectionId === connectionId);
+
+        if (!connectionExists) {
+             people.get(byteId)!.connections.push({
+                treeName: currentTreeName,
+                year: null,
+                isBit: false,
+                isByte: true,
+                otherPersonName: bitName,
+                isRoot: isRoot,
+                connectionId: connectionId,
+            });
+        }
     }
   });
 
@@ -268,14 +270,12 @@ export function findTreeAKAs(connections: Connection[]): TreeAKA {
     
     // Find root bytes for the current tree
     const connectionsInTree = connections.filter(c => (c.treeName || '(None)') === treeName);
-    const bitsInTree = new Set(connectionsInTree.map(c => c.bit));
-    const rootBytesInTree = new Set(
-      connectionsInTree.filter(c => !bitsInTree.has(c.byte)).map(c => c.byte)
-    );
+    const bitIdsInTree = new Set(connectionsInTree.map(c => c.bitId));
+    const rootBytesInTree = connectionsInTree.filter(c => !bitIdsInTree.has(c.byteId));
 
     // For each root byte, see if they were a bit in another tree
-    rootBytesInTree.forEach(rootByte => {
-      const connectionAsBit = connections.find(c => c.bit === rootByte);
+    rootBytesInTree.forEach(rootByteConnection => {
+      const connectionAsBit = connections.find(c => c.bitId === rootByteConnection.byteId);
 
       if (connectionAsBit) {
         const originalTree = connectionAsBit.treeName || '(None)';
@@ -292,4 +292,6 @@ export function findTreeAKAs(connections: Connection[]): TreeAKA {
   return treeAKAs;
 }
 
-    
+export const generateId = (): string => {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+};
