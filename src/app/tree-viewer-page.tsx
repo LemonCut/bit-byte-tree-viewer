@@ -163,7 +163,7 @@ function TreeViewerPageContent({ connections }: TreeViewerPageProps) {
               <SearchDialog connections={connections || []} />
             </div>
           </header>
-          <main className="flex-1 overflow-auto relative">
+          <main className="flex-1 overflow-hidden relative">
              <div className="absolute top-4 right-4 z-10">
                 {loading ? (
                     <Skeleton className="h-10 w-[200px]" />

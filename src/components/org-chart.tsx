@@ -1,8 +1,9 @@
+
 'use client';
 
 import { Chart } from 'react-google-charts';
 import type { TreeNode } from '@/lib/types';
-import { useEffect, useState, useRef, WheelEvent, MouseEvent } from 'react';
+import { useEffect, useState, useRef, WheelEvent, MouseEvent, TouchEvent } from 'react';
 import { Button } from './ui/button';
 import { ZoomIn, ZoomOut, LocateFixed, Download } from 'lucide-react';
 import { toPng } from 'html-to-image';
@@ -65,6 +66,8 @@ export function OrgChart({ data, currentTreeName }: OrgChartProps) {
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
   const [isChartVisible, setIsChartVisible] = useState(false);
+  const pinchDist = useRef(0);
+
 
   useEffect(() => {
     if (data && data.length > 0) {
@@ -122,6 +125,58 @@ export function OrgChart({ data, currentTreeName }: OrgChartProps) {
   
   const handleMouseLeave = (e: MouseEvent<HTMLDivElement>) => {
     setIsPanning(false);
+  }
+  
+  const handleTouchStart = (e: TouchEvent<HTMLDivElement>) => {
+    if ((e.target as HTMLElement).closest('.google-visualization-orgchart-node')) return;
+    e.preventDefault();
+
+    if (e.touches.length === 1) {
+      setIsPanning(true);
+      setPanStart({ x: e.touches[0].clientX - transform.x, y: e.touches[0].clientY - transform.y });
+    } else if (e.touches.length === 2) {
+      pinchDist.current = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY,
+      );
+    }
+  }
+
+  const handleTouchMove = (e: TouchEvent<HTMLDivElement>) => {
+    if ((e.target as HTMLElement).closest('.google-visualization-orgchart-node')) return;
+    e.preventDefault();
+
+    if (e.touches.length === 1 && isPanning) {
+      const newX = e.touches[0].clientX - panStart.x;
+      const newY = e.touches[0].clientY - panStart.y;
+      setTransform(prev => ({ ...prev, x: newX, y: newY }));
+    } else if (e.touches.length === 2) {
+        const newPinchDist = Math.hypot(
+            e.touches[0].clientX - e.touches[1].clientX,
+            e.touches[0].clientY - e.touches[1].clientY,
+        );
+        const scaleAmount = newPinchDist / pinchDist.current;
+        pinchDist.current = newPinchDist;
+        
+        const newScale = Math.max(0.2, Math.min(transform.scale * scaleAmount, 5));
+        
+        if (!containerRef.current) return;
+        const rect = containerRef.current.getBoundingClientRect();
+        
+        // Get midpoint of touch
+        const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left;
+        const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top;
+
+        const newX = midX - (midX - transform.x) * (newScale / transform.scale);
+        const newY = midY - (midY - transform.y) * (newScale / transform.scale);
+
+        setTransform({ scale: newScale, x: newX, y: newY });
+    }
+  }
+
+  const handleTouchEnd = (e: TouchEvent<HTMLDivElement>) => {
+    setIsPanning(false);
+    pinchDist.current = 0;
   }
 
   const handleZoom = (direction: 'in' | 'out') => {
@@ -212,7 +267,18 @@ export function OrgChart({ data, currentTreeName }: OrgChartProps) {
   }
   
   return (
-    <div className="relative w-full h-full overflow-hidden cursor-grab" ref={containerRef} onWheel={handleWheel} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseLeave}>
+    <div 
+      className="relative w-full h-full overflow-hidden cursor-grab touch-none" 
+      ref={containerRef} 
+      onWheel={handleWheel} 
+      onMouseDown={handleMouseDown} 
+      onMouseMove={handleMouseMove} 
+      onMouseUp={handleMouseUp} 
+      onMouseLeave={handleMouseLeave}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
       <div 
         ref={chartWrapperRef}
         className="w-min h-min absolute top-0 left-0"
