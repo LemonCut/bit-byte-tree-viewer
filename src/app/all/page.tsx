@@ -42,10 +42,9 @@ async function getConnectionsData() {
   }
 }
 
-async function MorePageContent() {
+async function AllTreesPageContent() {
   const connections = await getConnectionsData();
   const treeAKAs = findTreeAKAs(connections as Connection[]);
-  // We pass the treeAKAs to getTrees, which will handle filtering out the old names.
   const { allTrees, saplings, predecessorTrees } = getTrees(connections as Connection[], 4, treeAKAs, false);
 
 
@@ -170,10 +169,10 @@ async function MorePageContent() {
   );
 }
 
-export default function MorePage() {
+export default function AllTreesPage() {
   return (
     <Suspense fallback={<div>Loading...</div>}>
-      <MorePageContent />
+      <AllTreesPageContent />
     </Suspense>
   );
 }

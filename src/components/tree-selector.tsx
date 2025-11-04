@@ -27,7 +27,7 @@ export function TreeSelector({ trees, defaultTree, className }: TreeSelectorProp
 
   const handleSelect = (treeName: string) => {
     if (treeName === 'more') {
-      push('/more');
+      push('/all');
       return;
     }
     const params = new URLSearchParams(searchParams.toString());
