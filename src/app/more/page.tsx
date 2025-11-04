@@ -46,7 +46,7 @@ async function MorePageContent() {
   const connections = await getConnectionsData();
   const treeAKAs = findTreeAKAs(connections as Connection[]);
   // We pass the treeAKAs to getTrees, which will handle filtering out the old names.
-  const { allTrees, saplings } = getTrees(connections as Connection[], 4, treeAKAs, false);
+  const { allTrees, saplings, predecessorTrees } = getTrees(connections as Connection[], 4, treeAKAs, false);
 
 
   return (
@@ -116,6 +116,34 @@ async function MorePageContent() {
               ) : (
                 <p className="text-muted-foreground text-sm">
                   No sapling trees found.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+
+          <Separator className="my-8" />
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Predecessor Trees</CardTitle>
+              <CardDescription>
+                These trees have branched off and will redirect to their new trees.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {predecessorTrees.length > 0 ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                  {predecessorTrees.map((tree) => (
+                    <Button key={tree} variant="secondary" asChild>
+                      <Link href={`/?tree=${encodeURIComponent(tree)}`}>
+                        {tree}
+                      </Link>
+                    </Button>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-sm">
+                  No predecessor trees found.
                 </p>
               )}
             </CardContent>

@@ -4,23 +4,23 @@ import type { Connection, TreeNode, SearchResult, TreeAKA, Person } from '@/lib/
 // This file is now primarily for the data transformation logic.
 // The data itself will be read from a local CSV file.
 
-export function getTrees(connections: Connection[], saplingThreshold: number = 4, treeAKAs: TreeAKA = {}, isAdmin: boolean = false): { allTrees: string[], saplings: string[] } {
+export function getTrees(connections: Connection[], saplingThreshold: number = 4, treeAKAs: TreeAKA = {}, isAdmin: boolean = false): { allTrees: string[], saplings: string[], predecessorTrees: string[] } {
   const treeNames = new Set<string>();
   connections.forEach((c) => {
     const treeName = c.tree || '(None)';
     treeNames.add(treeName);
   });
   
+  const predecessorTrees: string[] = [];
+
   if (!isAdmin) {
     // This logic ensures we only show the *final* canonical tree name.
-    // If a tree name is listed as an "old" name (a key in treeAKAs)
-    // but is NOT the "new" name for any other tree (not a value in treeAKAs),
-    // then it is considered obsolete and should be removed.
     const oldTreeNames = Object.keys(treeAKAs);
     const canonicalTreeNames = new Set(Object.values(treeAKAs));
     oldTreeNames.forEach(oldName => {
       if (!canonicalTreeNames.has(oldName)) {
         treeNames.delete(oldName);
+        predecessorTrees.push(oldName);
       }
     });
   }
@@ -49,10 +49,12 @@ export function getTrees(connections: Connection[], saplingThreshold: number = 4
 
   mainTrees.sort();
   saplings.sort();
+  predecessorTrees.sort();
   
   return {
     allTrees: mainTrees,
     saplings: saplings,
+    predecessorTrees: predecessorTrees,
   };
 }
 
