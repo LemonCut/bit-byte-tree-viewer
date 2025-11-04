@@ -65,14 +65,24 @@ export function OrgChart({ data, currentTreeName }: OrgChartProps) {
   const [transform, setTransform] = useState({ scale: 1, x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
+  const [isChartVisible, setIsChartVisible] = useState(false);
 
   useEffect(() => {
     if (data && data.length > 0) {
+      setIsChartVisible(false);
       setChartData(formatDataForGoogleChart(data));
-      // Use a timeout to ensure the chart is rendered before resetting view
-      setTimeout(() => resetView(true), 100);
+      
+      // The chart needs a moment to render before we can measure it.
+      // requestAnimationFrame is a better choice than setTimeout(0)
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            resetView(true);
+            setIsChartVisible(true);
+        })
+      });
     } else {
       setChartData([]);
+      setIsChartVisible(false);
     }
   }, [data, currentTreeName]);
   
@@ -198,6 +208,7 @@ export function OrgChart({ data, currentTreeName }: OrgChartProps) {
             transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
             transformOrigin: '0 0',
             cursor: isPanning ? 'grabbing' : 'grab',
+            visibility: isChartVisible ? 'visible' : 'hidden',
         }}
       >
         <Chart
