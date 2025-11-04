@@ -32,19 +32,23 @@ export function Combobox({ options, value, onChange, placeholder, allowCreate = 
   const [open, setOpen] = React.useState(false)
   const [inputValue, setInputValue] = React.useState(value || "")
 
+  React.useEffect(() => {
+    if (value) {
+      setInputValue(value);
+    }
+  }, [value]);
+
   const handleSelect = (currentValue: string) => {
     const newValue = currentValue === value ? "" : currentValue
     onChange(newValue)
     setInputValue(newValue)
     setOpen(false)
   }
-  
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const typedValue = e.target.value;
-    setInputValue(typedValue);
-    if (allowCreate) {
-        onChange(typedValue);
-    }
+
+  const handleCreate = (val: string) => {
+    onChange(val);
+    setInputValue(val);
+    setOpen(false);
   }
 
   return (
@@ -57,7 +61,7 @@ export function Combobox({ options, value, onChange, placeholder, allowCreate = 
           className="w-full justify-between"
         >
           {value
-            ? options.find((option) => option.value === value)?.label
+            ? options.find((option) => option.value === value)?.label ?? value
             : placeholder || "Select option..."}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
@@ -71,7 +75,15 @@ export function Combobox({ options, value, onChange, placeholder, allowCreate = 
           />
           <CommandList>
             <CommandEmpty>
-                {allowCreate ? `No results. Press Enter to create "${inputValue}".` : 'No results found.'}
+                {allowCreate && inputValue ? (
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start"
+                    onClick={() => handleCreate(inputValue)}
+                  >
+                    Create "{inputValue}"
+                  </Button>
+                ) : 'No results found.'}
             </CommandEmpty>
             <CommandGroup>
               {options.map((option) => (
@@ -89,17 +101,6 @@ export function Combobox({ options, value, onChange, placeholder, allowCreate = 
                   {option.label}
                 </CommandItem>
               ))}
-                {allowCreate && inputValue && !options.some(opt => opt.value.toLowerCase() === inputValue.toLowerCase()) && (
-                    <CommandItem
-                        value={inputValue}
-                        onSelect={() => {
-                            handleSelect(inputValue)
-                        }}
-                    >
-                        <Check className="mr-2 h-4 w-4 opacity-0" />
-                        Create "{inputValue}"
-                    </CommandItem>
-                )}
             </CommandGroup>
           </CommandList>
         </Command>

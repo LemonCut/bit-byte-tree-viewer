@@ -84,6 +84,35 @@ export function AddConnectionForm({
       year: connection?.year || new Date().getFullYear(),
     }), [connection]),
   });
+  
+  const action = isEditMode ? updateConnection : addConnection;
+
+  const handleSubmit = async (data: ConnectionFormValues) => {
+    const formData = new FormData();
+    Object.entries(data).forEach(([key, value]) => {
+      formData.append(key, String(value));
+    });
+    if (isEditMode && connection?.id) {
+        formData.append('id', connection.id);
+    }
+    
+    const result = await action(null, formData);
+
+    if (result.success) {
+      onOpenChange(false);
+      form.reset();
+      toast({
+        title: 'Success!',
+        description: result.message,
+      });
+    } else {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: result.message || 'An unknown error occurred.',
+      });
+    }
+  };
 
   useEffect(() => {
     form.reset({
@@ -93,26 +122,6 @@ export function AddConnectionForm({
       year: connection?.year || new Date().getFullYear(),
     });
   }, [connection, form, open]);
-  
-  const action = isEditMode ? updateConnection : addConnection;
-  const [state, formAction] = useFormState(action, { success: false, message: '' });
-
-  useEffect(() => {
-    if (state.success) {
-      onOpenChange(false);
-      form.reset();
-      toast({
-        title: 'Success!',
-        description: state.message,
-      });
-    } else if (state.message && !state.success) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: state.message,
-      });
-    }
-  }, [state, toast, form, onOpenChange]);
   
   const peopleOptions = people.map(p => ({ label: p, value: p }));
   const treeOptions = trees.map(t => ({ label: t, value: t }));
@@ -147,12 +156,7 @@ export function AddConnectionForm({
         </DialogHeader>
         <Form {...form}>
           <form
-            action={(formData) => {
-              if (isEditMode && connection) {
-                formData.set('id', connection.id);
-              }
-              formAction(formData);
-            }}
+             onSubmit={form.handleSubmit(handleSubmit)}
             className="space-y-4"
           >
             <FormField
