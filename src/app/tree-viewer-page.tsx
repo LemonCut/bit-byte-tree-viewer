@@ -11,7 +11,7 @@ import {
   SidebarTrigger,
 } from '@/components/ui/sidebar';
 import { TreeViewLogo } from '@/components/icons';
-import { getTrees, getAllPeople, findTreeAKAs, findDisconnectedTrees, Connection } from '@/lib/data';
+import { getTrees, getAllPeople, findTreeAKAs, findDisconnectedTrees, buildTree } from '@/lib/data';
 import { TreeSelector } from '@/components/tree-selector';
 import { OrgChart } from '@/components/org-chart';
 import { Separator } from '@/components/ui/separator';
@@ -22,7 +22,7 @@ import {
   CardDescription,
   CardContent,
 } from '@/components/ui/card';
-import type { TreeNode } from '@/lib/types';
+import type { TreeNode, Connection } from '@/lib/types';
 import { SearchDialog } from '@/components/search-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AdminUnlock } from '@/components/admin-unlock';
@@ -129,9 +129,11 @@ function TreeViewerPageContent({ connections }: TreeViewerPageProps) {
                 />
             </SidebarGroup>
             <Separator />
-            <SidebarGroup>
-                <DisconnectedTrees treeNames={disconnectedTrees} />
-            </SidebarGroup>
+            <div className="mt-auto">
+              <SidebarGroup>
+                  <DisconnectedTrees treeNames={disconnectedTrees} />
+              </SidebarGroup>
+            </div>
           </SidebarContent>
         </Sidebar>
         <div className="flex flex-col flex-1 min-w-0">
