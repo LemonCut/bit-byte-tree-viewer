@@ -1,3 +1,4 @@
+
 import { Suspense } from 'react';
 import { TreeViewerPage } from '@/app/tree-viewer-page';
 import { PageLoader } from '@/components/page-loader';
@@ -28,6 +29,10 @@ async function getConnectionsFromCSV(): Promise<Connection[]> {
     })) as Connection[];
 
   } catch (error) {
+     if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
+      console.warn("connections.csv not found. An empty file will be created if you add a connection.");
+      return [];
+    }
     console.error("Error reading or parsing CSV file:", error);
     return [];
   }

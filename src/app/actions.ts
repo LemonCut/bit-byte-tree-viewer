@@ -1,3 +1,4 @@
+
 'use server';
 
 import { z } from 'zod';
@@ -53,7 +54,11 @@ async function readConnections(): Promise<Connection[]> {
         return value;
       },
     });
-    return parsed.data as Connection[];
+    // Add a unique ID to each connection for client-side use
+     return parsed.data.map((row: any, index: number) => ({
+      ...row,
+      id: `${row.tree}-${row.byte}-${row.bit}-${index}`,
+    })) as Connection[];
   } catch (error) {
     // If file doesn't exist, return empty array
     if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
@@ -64,7 +69,9 @@ async function readConnections(): Promise<Connection[]> {
 }
 
 async function writeConnections(connections: Connection[]): Promise<void> {
-  const csvString = Papa.unparse(connections, { header: true });
+  // We need to strip the ID before writing back to CSV
+  const connectionsWithoutId = connections.map(({ id, ...rest }) => rest);
+  const csvString = Papa.unparse(connectionsWithoutId, { header: true });
   await fs.writeFile(csvPath, csvString, 'utf-8');
 }
 
@@ -83,10 +90,10 @@ export async function addConnection(prevState: any, formData: FormData) {
 
     try {
         const connections = await readConnections();
-        const newId = `${parsed.data.tree}-${parsed.data.byte}-${parsed.data.bit}-${connections.length}`;
-
+        
+        // The ID is now only for client-side keying, not for the CSV.
         const newConnection: Connection = {
-            id: newId,
+            id: `new-${Date.now()}`, // Temporary ID
             ...parsed.data,
         };
 
@@ -126,10 +133,16 @@ export async function updateConnection(prevState: any, formData: FormData) {
             return { success: false, message: 'Connection not found.' };
         }
 
-        connections[index] = {
-            ...connections[index],
-            ...parsed.data,
+        // Create a new object for the updated connection, preserving the ID for this operation
+        const updatedConnection = {
+            id: parsed.data.id, // Keep original ID for this transaction
+            bit: parsed.data.bit,
+            byte: parsed.data.byte,
+            tree: parsed.data.tree,
+            year: parsed.data.year
         };
+
+        connections[index] = updatedConnection;
 
         await writeConnections(connections);
 
