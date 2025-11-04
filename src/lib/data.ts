@@ -12,6 +12,10 @@ export function getTrees(connections: Connection[], saplingThreshold: number = 4
   });
   
   if (!isAdmin) {
+    // This logic ensures we only show the *final* canonical tree name.
+    // If a tree name is listed as an "old" name (a key in treeAKAs)
+    // but is NOT the "new" name for any other tree (not a value in treeAKAs),
+    // then it is considered obsolete and should be removed.
     const oldTreeNames = Object.keys(treeAKAs);
     const canonicalTreeNames = new Set(Object.values(treeAKAs));
     oldTreeNames.forEach(oldName => {

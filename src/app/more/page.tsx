@@ -45,13 +45,8 @@ async function getConnectionsData() {
 async function MorePageContent() {
   const connections = await getConnectionsData();
   const treeAKAs = findTreeAKAs(connections as Connection[]);
-  const { allTrees, saplings } = getTrees(connections as Connection[]);
-  
-  const oldTreeNames = Object.keys(treeAKAs);
-
-  // Exclude trees that are just old names for other trees.
-  const trueMainTrees = allTrees.filter(t => !oldTreeNames.includes(t));
-  const trueSaplings = saplings.filter(s => !oldTreeNames.includes(s));
+  // We pass the treeAKAs to getTrees, which will handle filtering out the old names.
+  const { allTrees, saplings } = getTrees(connections as Connection[], 4, treeAKAs, false);
 
 
   return (
@@ -80,9 +75,9 @@ async function MorePageContent() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {trueMainTrees.length > 0 ? (
+              {allTrees.length > 0 ? (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                  {trueMainTrees.map((tree) => (
+                  {allTrees.map((tree) => (
                      <Button key={tree} variant="secondary" asChild>
                       <Link href={`/?tree=${encodeURIComponent(tree)}`}>
                         {tree}
@@ -108,9 +103,9 @@ async function MorePageContent() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {trueSaplings.length > 0 ? (
+              {saplings.length > 0 ? (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                  {trueSaplings.map((sapling) => (
+                  {saplings.map((sapling) => (
                     <Button key={sapling} variant="secondary" asChild>
                       <Link href={`/?tree=${encodeURIComponent(sapling)}`}>
                         {sapling}
