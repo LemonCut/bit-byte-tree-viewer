@@ -1,8 +1,8 @@
 
 'use client';
 
-import { useState, useEffect, useActionState } from 'react';
-import { useFormStatus } from 'react-dom';
+import { useState, useEffect } from 'react';
+import { useFormState, useFormStatus } from 'react-dom';
 import { Unlock } from 'lucide-react';
 import { Button } from './ui/button';
 import {
@@ -32,7 +32,7 @@ export function AdminUnlock({ onUnlock }: { onUnlock: () => void }) {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
 
-  const [state, formAction] = useActionState(verifyAdminPassword, {
+  const [state, formAction] = useFormState(verifyAdminPassword, {
     success: false,
     message: '',
   });
@@ -45,7 +45,7 @@ export function AdminUnlock({ onUnlock }: { onUnlock: () => void }) {
         title: 'Success!',
         description: state.message,
       });
-    } else if (state.message && !state.success) {
+    } else if (state.message && !state.success && state.message !== '') {
       toast({
         variant: 'destructive',
         title: 'Error',
@@ -53,6 +53,16 @@ export function AdminUnlock({ onUnlock }: { onUnlock: () => void }) {
       });
     }
   }, [state, onUnlock, toast]);
+
+  const handleOpenChange = (isOpen: boolean) => {
+    setOpen(isOpen);
+    // Reset state if dialog is closed without success
+    if (!isOpen && !state.success) {
+        // A way to reset the form state is not directly available with useFormState
+        // without more complex workarounds. For now, the message might persist
+        // if the user closes and re-opens the dialog after an error.
+    }
+  };
 
   return (
     <>
@@ -71,7 +81,7 @@ export function AdminUnlock({ onUnlock }: { onUnlock: () => void }) {
           <span className="sr-only">Unlock Admin View</span>
         </Button>
       </div>
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Admin Access</DialogTitle>
