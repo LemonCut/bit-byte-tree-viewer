@@ -181,9 +181,12 @@ export function OrgChart({ data, currentTreeName }: OrgChartProps) {
     const chartTable = chartWrapperRef.current.querySelector('table');
     if (!chartTable) return;
 
+    const bodyBackgroundColor = window.getComputedStyle(document.body).backgroundColor;
+
     toPng(chartTable, { 
         cacheBust: true, 
         pixelRatio: 2,
+        backgroundColor: bodyBackgroundColor,
         // This option helps with CORS issues by not failing on remote resources.
         fetchRequestInit: { 
           headers: new Headers(),
