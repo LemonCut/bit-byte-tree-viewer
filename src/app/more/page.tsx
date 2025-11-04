@@ -45,7 +45,7 @@ async function getConnectionsData() {
 async function MorePageContent() {
   const connections = await getConnectionsData();
   const treeAKAs = findTreeAKAs(connections as Connection[]);
-  const { saplings } = getTrees(connections as Connection[]);
+  const { allTrees, saplings } = getTrees(connections as Connection[]);
 
   // Exclude saplings that are just old names for other trees
   const trueSaplings = saplings.filter(s => !Object.keys(treeAKAs).includes(s));
@@ -67,7 +67,35 @@ async function MorePageContent() {
       </header>
       <main className="flex-1 p-4 md:p-6 lg:p-8">
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-3xl font-bold tracking-tight mb-6">More Trees</h2>
+          <h2 className="text-3xl font-bold tracking-tight mb-6">All Trees</h2>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Trees</CardTitle>
+              <CardDescription>
+                The main family trees in the database.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {allTrees.length > 0 ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                  {allTrees.map((tree) => (
+                     <Button key={tree} variant="secondary" asChild>
+                      <Link href={`/?tree=${encodeURIComponent(tree)}`}>
+                        {tree}
+                      </Link>
+                    </Button>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-sm">
+                  No main trees found. Adjust the sapling threshold to see more.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+
+          <Separator className="my-8" />
 
           <Card>
             <CardHeader>

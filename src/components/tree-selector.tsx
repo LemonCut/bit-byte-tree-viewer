@@ -21,7 +21,9 @@ type TreeSelectorProps = {
 export function TreeSelector({ trees, defaultTree, className }: TreeSelectorProps) {
   const searchParams = useSearchParams();
   const pathname = usePathname();
-  const { replace, push } = useRouter();
+  const { push } = useRouter();
+  const router = useRouter();
+
 
   const handleSelect = (treeName: string) => {
     if (treeName === 'more') {
@@ -34,7 +36,7 @@ export function TreeSelector({ trees, defaultTree, className }: TreeSelectorProp
     } else {
       params.delete('tree');
     }
-    replace(`${pathname}?${params.toString()}`);
+    router.replace(`${pathname}?${params.toString()}`);
   };
 
   return (
@@ -49,7 +51,7 @@ export function TreeSelector({ trees, defaultTree, className }: TreeSelectorProp
           </SelectItem>
         ))}
         {trees.length > 0 && <SelectSeparator />}
-        <SelectItem value="more">More...</SelectItem>
+        <SelectItem value="more">View all trees</SelectItem>
       </SelectContent>
     </Select>
   );
