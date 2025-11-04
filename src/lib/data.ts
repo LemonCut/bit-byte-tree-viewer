@@ -4,7 +4,7 @@ import type { Connection, TreeNode, SearchResult, TreeAKA, Person } from '@/lib/
 // This file is now primarily for the data transformation logic.
 // The data itself will be read from a local CSV file.
 
-export function getTrees(connections: Connection[], treeAKAs: TreeAKA = {}, isAdmin: boolean = false): { allTrees: string[], saplings: string[] } {
+export function getTrees(connections: Connection[], saplingThreshold: number = 3, treeAKAs: TreeAKA = {}, isAdmin: boolean = false): { allTrees: string[], saplings: string[] } {
   const treeNames = new Set<string>();
   connections.forEach((c) => {
     const treeName = c.tree || '(None)';
@@ -36,7 +36,7 @@ export function getTrees(connections: Connection[], treeAKAs: TreeAKA = {}, isAd
       }
     });
 
-    if (peopleInTree.size <= 3) {
+    if (peopleInTree.size <= saplingThreshold) {
       saplings.push(treeName);
     } else {
       mainTrees.push(treeName);

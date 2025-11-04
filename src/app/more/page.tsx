@@ -4,7 +4,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import Papa from 'papaparse';
 import type { Connection } from '@/lib/types';
-import { getTrees } from '@/lib/data';
+import { getTrees, findTreeAKAs } from '@/lib/data';
 import Link from 'next/link';
 import {
   Card,
@@ -44,7 +44,12 @@ async function getConnectionsData() {
 
 async function MorePageContent() {
   const connections = await getConnectionsData();
+  const treeAKAs = findTreeAKAs(connections as Connection[]);
   const { saplings } = getTrees(connections as Connection[]);
+
+  // Exclude saplings that are just old names for other trees
+  const trueSaplings = saplings.filter(s => !Object.keys(treeAKAs).includes(s));
+
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -68,13 +73,13 @@ async function MorePageContent() {
             <CardHeader>
               <CardTitle>Saplings</CardTitle>
               <CardDescription>
-                These are smaller trees with three or fewer members.
+                These are smaller, standalone trees with three or fewer members.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {saplings.length > 0 ? (
+              {trueSaplings.length > 0 ? (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                  {saplings.map((sapling) => (
+                  {trueSaplings.map((sapling) => (
                     <Button key={sapling} variant="secondary" asChild>
                       <Link href={`/?tree=${encodeURIComponent(sapling)}`}>
                         {sapling}
