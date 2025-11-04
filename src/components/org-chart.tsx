@@ -3,9 +3,9 @@
 
 import { Chart } from 'react-google-charts';
 import type { TreeNode } from '@/lib/types';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, WheelEvent, MouseEvent } from 'react';
 import { Button } from './ui/button';
-import { ZoomIn, ZoomOut } from 'lucide-react';
+import { ZoomIn, ZoomOut, LocateFixed } from 'lucide-react';
 
 interface OrgChartProps {
   data: TreeNode[];
@@ -27,12 +27,9 @@ function formatDataForGoogleChart(
   
   function traverse(nodes: TreeNode[], parent: string | null = null) {
     nodes.forEach((node) => {
-      // Each node in the Google Org Chart must have a unique ID.
-      // We use the sanitized `id` for the chart's internal value `v`, and the `name` for display `f`.
       const nodeId = node.id;
       let nodeName = `<div style="font-weight: bold;">${node.name}</div>`;
       
-      // If the node is a root of a specific tree, append the tree name
       if (node.rootOfTreeName) {
         nodeName += `<div style="font-size:0.8em; color:grey;">${node.rootOfTreeName}</div>`;
       }
@@ -60,51 +57,123 @@ export function OrgChart({ data, currentTreeName }: OrgChartProps) {
   const [chartData, setChartData] = useState<
     (string | { v: string; f: string } | null)[][]
   >([]);
-  const [zoom, setZoom] = useState(1);
   
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [transform, setTransform] = useState({ scale: 1, x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState(false);
+  const [panStart, setPanStart] = useState({ x: 0, y: 0 });
+
   useEffect(() => {
     if (data && data.length > 0) {
       setChartData(formatDataForGoogleChart(data));
+      // Reset view when data changes
+      setTransform({ scale: 1, x: 0, y: 0 });
     } else {
       setChartData([]);
     }
   }, [data, currentTreeName]);
+  
+  const handleWheel = (e: WheelEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const scaleAmount = -e.deltaY > 0 ? 1.1 : 1 / 1.1;
+    const newScale = Math.max(0.2, Math.min(transform.scale * scaleAmount, 5));
 
-  const handleZoomIn = () => setZoom((prev) => prev + 0.1);
-  const handleZoomOut = () => setZoom((prev) => Math.max(0.2, prev - 0.1));
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    const newX = mouseX - (mouseX - transform.x) * (newScale / transform.scale);
+    const newY = mouseY - (mouseY - transform.y) * (newScale / transform.scale);
+    
+    setTransform({ scale: newScale, x: newX, y: newY });
+  };
+
+  const handleMouseDown = (e: MouseEvent<HTMLDivElement>) => {
+    if ((e.target as HTMLElement).closest('.google-visualization-orgchart-node')) return;
+    e.preventDefault();
+    setIsPanning(true);
+    setPanStart({ x: e.clientX - transform.x, y: e.clientY - transform.y });
+  };
+
+  const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
+    if (!isPanning) return;
+    e.preventDefault();
+    const newX = e.clientX - panStart.x;
+    const newY = e.clientY - panStart.y;
+    setTransform(prev => ({ ...prev, x: newX, y: newY }));
+  };
+
+  const handleMouseUp = (e: MouseEvent<HTMLDivElement>) => {
+    setIsPanning(false);
+  };
+  
+  const handleMouseLeave = (e: MouseEvent<HTMLDivElement>) => {
+    setIsPanning(false);
+  }
+
+  const handleZoom = (direction: 'in' | 'out') => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const scaleAmount = direction === 'in' ? 1.2 : 1 / 1.2;
+    const newScale = Math.max(0.2, Math.min(transform.scale * scaleAmount, 5));
+
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+
+    const newX = centerX - (centerX - transform.x) * (newScale / transform.scale);
+    const newY = centerY - (centerY - transform.y) * (newScale / transform.scale);
+    
+    setTransform({ scale: newScale, x: newX, y: newY });
+  };
+
+  const resetView = () => {
+    setTransform({ scale: 1, x: 0, y: 0 });
+  };
+
 
   if (!data || data.length === 0) {
     return null;
   }
   
   return (
-    <div className="relative w-full h-full">
-        <div className="absolute bottom-4 right-4 z-10 flex flex-col gap-2">
-            <Button variant="outline" size="icon" onClick={handleZoomIn}>
+    <div className="relative w-full h-full overflow-hidden cursor-grab" ref={containerRef} onWheel={handleWheel} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseLeave}>
+      <div 
+        className="w-full h-full"
+        style={{
+            transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
+            transformOrigin: '0 0',
+            cursor: isPanning ? 'grabbing' : 'grab',
+        }}
+      >
+        <Chart
+            chartType="OrgChart"
+            data={chartData}
+            width="100%"
+            height="400px"
+            options={{
+                allowHtml: true,
+                nodeClass: 'google-chart-node',
+                selectedNodeClass: 'google-chart-node-selected',
+                size: 'large',
+            }}
+        />
+      </div>
+      <div className="absolute bottom-4 right-4 z-10 flex flex-col gap-2">
+            <Button variant="outline" size="icon" onClick={() => handleZoom('in')} title="Zoom In">
                 <ZoomIn className="h-4 w-4" />
                 <span className="sr-only">Zoom In</span>
             </Button>
-            <Button variant="outline" size="icon" onClick={handleZoomOut}>
+            <Button variant="outline" size="icon" onClick={() => handleZoom('out')} title="Zoom Out">
                 <ZoomOut className="h-4 w-4" />
                 <span className="sr-only">Zoom Out</span>
             </Button>
+            <Button variant="outline" size="icon" onClick={resetView} title="Reset View">
+                <LocateFixed className="h-4 w-4" />
+                <span className="sr-only">Reset View</span>
+            </Button>
         </div>
-      <div className="w-full h-full overflow-auto">
-        <div style={{ transform: `scale(${zoom})`, transformOrigin: 'top left', width: `${100 / zoom}%`, height: `${100 / zoom}%` }}>
-            <Chart
-                chartType="OrgChart"
-                data={chartData}
-                width="100%"
-                height="400px"
-                options={{
-                    allowHtml: true,
-                    nodeClass: 'google-chart-node',
-                    selectedNodeClass: 'google-chart-node-selected',
-                    size: 'large', // Ensures the nodes are large enough to be readable
-                }}
-            />
-        </div>
-      </div>
     </div>
   );
 }
+
