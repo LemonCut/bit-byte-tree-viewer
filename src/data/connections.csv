@@ -1,14 +1,356 @@
-byte,bit,tree,year
-Big A,Bit B,Alpha,2022
-Big A,Bit C,Alpha,2022
-Bit B,Bit D,Alpha,2023
-Bit C,Bit E,Alpha,2023
-Bit C,Bit F,Alpha,2023
-Big X,Bit Y,Zeta,2021
-Bit Y,Bit Z,Zeta,2022
-Mega,Giga,Omega,2020
-Giga,Tera,Omega,2021
-Root 1,Node A,Disconnected,2022
-Root 2,Node B,Disconnected,2022
-Old Root,Old Node,Old,2020
-Bit D,New Node,New,2024
+bit,byte,tree,year
+Asaki Billawala,Nolan Chai,XLB,2024
+Herman Hundsberger,Calvin Nguyen,Legacy,2024
+Alexander Yu,Alistair Gray,Vialitree,2021
+Kaitlyn Chin,Judy Liu,Bug-free,2022
+Yaena Chun,Justin Lu,Wholesome Reacts,2024
+Yen-Ru (Rebecca) Chen,Hou Wai Wan,XLB,2023
+Yuri Liu,Lisa Liu,XLB,2024
+Alan Cao,Jeffrey Ha,Hypebeast,2020
+Justin Chen,Nelson Chen,Hypebeast,2024
+Shivani Sridhar,Brandon Joe,Bucket,2024
+Jacob Lin,Jennifer Pham,Xiaoz,2021
+Justin Suh,Victor Ku,OwO,2023
+Kelynn Ma,Henry Chan,Wholesome Reacts,2021
+Darwin Lee,Jennifer Wu,UwU,2020
+Vincent Chau,Matthew Chanthirat,OnlyFams,2021
+Raymond Sun,Nishant Balaji,Penguin,2021
+Zakary Hori,Thomas Garry,Tall,2021
+Brandon Khor,Harry Wang,Legacy,2024
+Mojo Batey,Angelo Jensen,Legacy,2024
+Jenny Nguyen,Henry Chan,Wholesome Reacts,2020
+Hieu Phan,Edward De Leon,Wholesome Reacts,2022
+Mia Le,Tiffany Lee,FIG,2022
+Made Widyadhari,Kaitlyn Chin,Bug-free,2022
+Gloria Lee,Ragalina Palaka,Penguin,2023
+Basil Thaddeus,Angela Tsai,XLB,2023
+Nikhil Dange,Anish Gopalan,Big Snacc,2022
+Elizabeth Lee,Anthony Manrique,Sober,2022
+Jessica Inthasane,Edward Yang,Abstract,2021
+Jenna Canicosa,Matthew Pham,Bucket,2023
+Andrew Zheng,Kevin Lu,Hypebeast,2023
+Connie Chang,Faith Lu,XLB,2022
+Miguel Heatherman,Sergio Ramirez,XLB,2022
+Nick Liu,Nicholas Ho,Penguin,2022
+Kira Tran,Tiffany Chang,Bug-free,2021
+Vivian Nguyen,John-Duong Nguyen,Wholesome Reacts,2023
+Matthew Tan,Jonah Soong,FLEX,2022
+Nelson Chen,Zander Vilaysane,Hypebeast,2023
+Sean Keali'i,Kyle Tran,Wholesome Reacts,2024
+Adrian Laksana,Calvin Nguyen,Legacy,2024
+Joey Dang,Kendall Nakai,Bubble Milk,2020
+Aiden Lai,Purich Viwatkurkul,Legacy,2024
+Owen Lam,Hou Wai Wan,XLB,2023
+Annabelle Guiditta,Nicole Huynh,Dino,2024
+Connor Betterly,Ishaan Harry Kavoori,Truffula,2021
+Sirisha Munukutla,Matthew Chanthirat,OnlyFams,2021
+Bella Coles,Catherine Lee,(None - Pre-FIG),2021
+Nicole Zhang,Connie Chang,XLB,2022
+Rappel Ricafort,Melody Ruth,Bug-free,2022
+Ryan Liu,Basil Thaddeus,XLB,2024
+Murou Wang,Tuan (Tony) Minh Tran,OOP,2022
+Darian Hong,Joachim Do,(None),2020
+Alex Zhang,Faris Ashai,Dino,2022
+Emily Cai,Julie Nguyen,Wholesome Reacts,2024
+Leira Rullan,Michael He,Truffula,2024
+Danny Vo,Vincent Santos,Honey,2020
+Victoria Tran,Murou Wang,OOP,2023
+Justin Lu,Jessica Wang,Wholesome Reacts,2022
+Brian Chu,Joey Dang,Bubble Milk,2022
+Paige Pagaduan,Nishant Balaji,Penguin,2022
+Yiran Wan,Crystal (Ruby) Zhan,Cultured,2022
+Scott Semtner,Gowtham Duggirala,Big Snacc,2024
+Karl Hernandez,Alan Cao,Hypebeast,2021
+Andrew Smithwick,Nicholas Ho,Penguin,2022
+William Duan,David Dempsey,Tall,2020
+Kyle Vu,Fiona Chen,Shark,2022
+Anna Liu,Trisa Leung,Spicy,2021
+Jessica Lam,Jaden Padua,Sunshine Line,2020
+Mateo Ignacio,Joanne Wu,Bubble Milk,2022
+Nicole Huynh,Rahil Shah,Dino,2023
+Elaine Ha,Kristina Diep,Vialitree,2022
+John Tran,Will Martino,Sober,2020
+Roger (Keng-Lien) Lin,Judy Liu,Bug-free,2022
+Susan Duong,Jonathan Lum,Dino,2022
+Sherilyn Kuo,Prothit Halder,Sexy,2021
+Felicia Chan,Ivy Chan,Shark,2020
+Marcella Barneclo,Andrew Nguyen,Simp Sity,2021
+Leo Weng,Murou Wang,OOP,2023
+Brandon Joe,Matthew Pham,Bucket,2023
+Jenny Lam,Alex Zhang,Dino,2023
+Alan Mayer,Rahil Shah,Dino,2022
+Tristin Xie,Eric Xiao,Xiaoz,2020
+Catherine Zhang,Nolan Chai,XLB,2022
+Marcelo Shen,Connor Betterly,Truffula,2022
+Mikaela San Andres,Hana Tse,Wholesome Reacts,2023
+Naina Singh,Sarah Paull,Hypebeast,2023
+Jennifer Pham,Eric Xiao,Xiaoz,2020
+Essie Cheng,Jenny Mar,OwO,2023
+Nolan Chai,Aaron Yu,XLB,2022
+Edward De Leon,Henry Chan,Wholesome Reacts,2020
+Taylin Kieu,Jacob Lin,XLB,2023
+Lena Pham,Anthony Manrique,Sober,2023
+Dylan Umino,Victor Hsiao,XLB,2023
+Jimmy Ying,Anthony Manrique,Sober,2022
+Jenny Xu,Victor Ku,OwO,2024
+Ethan Flores,Donovan Le,Legacy,2023
+Alex Cheng,Kyle Hu,Pan,2021
+Eric Nguyen,Raymond Sun,Penguin,2022
+Angela Tsai,Connie Chang,XLB,2022
+Justin Nguyen,Wanning Lu,OOP,2023
+Eric Chang,Brenton Dunn,XLB,2023
+Serena Chen,Nicholas Ho,Penguin,2023
+Brandon Chiang,Arren De Manuel,Best Tree NA,2020
+Kristen Tran,Vanessa Hu,Bucket,2024
+Nicholas Quach,Richard Li,Bubble Milk,2022
+Ellen Chang,Jenny Mar,OwO,2023
+Alyssa Kongswangwongsa,Sergio Ramirez,XLB,2022
+Steven Steiner,Thang Phan,River,2020
+Joseph (Joey) Burgos,Faris Ashai,Dino,2022
+Max Cohen,Thang Phan,River,2020
+Emily Cai,Paige Pagaduan,Penguin,2024
+Caylin Canoy,Joanne Wu,Bubble Milk,2022
+Carmen He,Matthew Pham,Bucket,2022
+Asher Av,Kendall Nakai,Bubble Milk,2020
+Vanessa Chen,Amy An,Strength,2020
+Jenny Mar,Andrew Nguyen (OwO),OwO,2022
+Michelle Hong,Adrian Apsay,Hypebeast,2024
+Anish Gopalan,Shravan Hariharan,Big Snacc,2021
+Serina Wang,Ragalina Palaka,Penguin,2024
+Kirsten Michelle Arcinas,Adrian Apsay,Hypebeast,2024
+Grace Yang,Faith Lu,XLB,2022
+Brenton Dunn,Grace Yang,XLB,2022
+Angelo Jensen,Donovan Le,Legacy,2023
+Trevor Kwan,Connor Betterly,Truffula,2022
+Sabrina Cheng,Osheen Tikku,Penguin,2023
+Angela Hu,Connie Chang,XLB,2022
+Kiichiro Wang,Marcelo Shen,Truffula,2022
+Adrian Paul Macaraig,Edward De Leon,Wholesome Reacts,2021
+Atharva Kulkarni,Vedant Pateel,Big Snacc,2022
+Nishant Balaji,Bryce Tsuyuki,The Pointers,2021
+Anthony Chen,Matthew Yom,(None),2022
+Benjamin Liang,Kyle Vu,Shark,2022
+Valerie Nguyen,Jacob Bolano,Hypebeast,2022
+Pei Ting Chua Chai (Alexis Chai),Christopher Cha,The Cultured,2021
+Kyla Park,Rachel Chau,Hypebeast,2023
+Emily Chin,Casey Price,Sour Patch Kids,2020
+Victor Ku,Andrew Nguyen (OwO),OwO,2022
+Samantha Prestrelski,Crystal (Ruby) Zhan,Cultured,2022
+Divinity Gines,Alex Zhang,Dino,2023
+Rahil Shah,Faris Ashai,Dino,2022
+Han Kim,Garrett Luu,(None),2020
+Henry Luu,Danny Nguyen,Hypebeast,2021
+William Widjaja,Lisa Liu,XLB,2024
+Christopher Vu,Daisuke NIshioka,木,2021
+Tony Lin,Matei-Alexandru Gardus,Anti Ordo Arbora,2021
+Gowtham Duggirala,Nikhil Dange,Big Snacc,2023
+Andrew Hu,Kyle Hu,Pan,2021
+Celeste Keyes,Shirley Qi,Spicy,2022
+Jenna Bui,Tiffany Lee,FIG,2023
+Edward Lin,Nitya Pillai,Dino,2023
+Serena Chuang,Angela Hu,XLB,2023
+Danny Nguyen,Jeffrey Ha,Hypebeast,2020
+Brighten Hayama,Jason Liang,XLB,2022
+Kyle Le,Andrew Smithwick,Penguin,2024
+Alex Nguyen,Simon Fong,OwO,2020
+Kiera Navarro,Saman Naseri,Fortnite,2022
+Roxanna Ferrer Rios,Nolan Chai,XLB,2023
+Harry Wang,Nathaniel del Rosario,Legacy,2023
+Leonardo Trung Tin Nguyen,Jimmy Ying,Sober,2023
+Amberlee Huynh,Jeffrey Wang,Spicy,2022
+Stephanie Yan,Nelson Chen,Hypebeast,2024
+Dennis Kogan,Naasik Jahan,twee,2022
+Ann Yang,Lena Pham,Sober,2024
+Prisca He,Nolan Chai,XLB,2023
+Toby Zhang,Ethan Flores,Legacy,2024
+Jeffrey Wang,Elias Fang,Spicy,2022
+Tauhid Noor,Tuan (Tony) Minh Tran,Anti Ordo Arbora,2022
+Chanly Ly,Matthew Chanthirat,OnlyFams,2021
+Florence Chan,Sarp User,Moons of Uranus,2020
+Akil Selvan Rajendra Janarthanan,Ishaan Harry Kavoori,Truffula,2021
+David Min,Alex Nguyen,OwO,2022
+Dennis Juanito,Jose Guaro,Abstract,2020
+Rachel Cai,Justin Fong,Technicolor,2020
+Jadon Tran,Jessica Wang,Wholesome Reacts,2022
+Joe Cai,Winnie Wang,Balanced,2020
+Crisostomo P. Chan,Michael Shao,The Pointers,2021
+Phylicia Wang,Victoria Tran,OOP,2024
+Cheng-Yu Chiang,Ryan Xu,FLEX,2020
+Anderson Pan,Andrew Nguyen,Simp Sity,2020
+Matthew Kim,William Hu,Hypebeast,2022
+Adam Lee,Vincent You,Ram Ranchers,2020
+Vedant Patel,Shravan Hariharan,Big Snacc,2021
+Anthony Gonzalez,Shirley Qi,Spicy,2022
+Anthony Manrique,Alvin Wang,Sober,2021
+Kyeling Ong,Benson Vuong,Tree,2020
+Michael Shao,Simon Hu,The Pointers,2020
+Nimish Prabhakaran,Simon Fong,OwO,2020
+Aaron Li,Elizabeth Lee,Sober,2022
+Kyle Tran,Hieu Phan,Wholesome Reacts,2023
+Eric Tran,Justin Suh,OwO,2024
+Chaitya Jodhavat,Kevin Lu,Hypebeast,2023
+Jeffrey Lee,Ethan Aaron Shih,XLB,2023
+William Hu,Jeffrey Ha,Hypebeast,2022
+Matthew Pham,Kristina Diep,Vialitree,2022
+Christian O'Connor,Alan Mayer,Dino,2024
+Claire Lee,Osheen Tikku,Penguin,2024
+Michele Murakami,Jennifer Wu,UwU,2020
+Sarah He,Justin Lu,Wholesome Reacts,2023
+Judy Kim,Jennifer Yu,OOP,2023
+Lara Canonizado,Aaron Adriano,Stonks,2021
+Charisse Hao,Jacob Lin,XLB,2022
+Sergio Ramirez,Tristin Xie,Xiaoz,2021
+Niall Htet,Kelynn Ma,Wholesome Reacts,2022
+Joanne Chen,Rachel Chau,Hypebeast,2023
+Fiona Chen,Felicia Chan,Shark,2021
+Nicholas Ho,Nishant Balaji,Penguin,2021
+Hikaru Isayama,Ethan Flores,Legacy,2024
+Tony Meng,Aaron Adriano,Stonks,2021
+Crystal (Ruby) Zhan,Christopher Cha,The Cultured,2021
+Elaine Sun,Ada He,Bucket,2023
+Jing Li,Benson Vuong,Tree,2020
+John-Duong Nguyen,Kelynn Ma,Wholesome Reacts,2022
+Rachel Chau,Jacob Bolano,Hypebeast,2022
+Wanning Lu,Tuan (Tony) Minh Tran,OOP,2022
+Younus Ahmad,Dennis Luc,FLEX,2021
+Ashley Lin,Jacob Lin,XLB,2023
+Jessica Wang,Kelynn Ma,Wholesome Reacts,2022
+Shrieyaa Sekar Jayanthi,Anthony Manrique,Sober,2023
+Jared Singletary,Arren De Manuel,Best Tree NA,2020
+Amy Nguyen Trinh,Michael He,Truffula,2024
+Natasha Tran,Nolan Chai,XLB,2024
+Karen Gong,Amy An,Strength,2020
+Derek Wen,Vincent Santos,Honey,2020
+Bryce Tsuyuki,Simon Hu,The Pointers,2020
+Trisa Leung,Daniel Truong,Spicy,2020
+Victor Hsiao,Yiran Wan,Cultured,2022
+Uliyaah Faith Dionisio,Valerie Nguyen,Hypebeast,2023
+Emma Yuan,Dillon Hicks,(None),2020
+Hanxiao Shi,Andrew Smithwick,Penguin,2024
+Mary Kovic,Seeraj Somla,Fibona,2021
+Lisa Liu,Angela Tsai,XLB,2023
+Trinity Pham,Henry Chan,Wholesome Reacts,2021
+Julie Hang,Richard Li,Bubble Milk,2022
+Ethan Aaron Shih,Alyssa Kongswangwongsa,XLB,2022
+Joanne Wu,Asher Av,Bubble Milk,2021
+Zihan Zhao,Allison Kim,Spicy,2024
+Michael He,Kiichiro Wang,Truffula,2023
+Jonah Soong,Dennis Luc,FLEX,2021
+Celine Nguyen,Murou Wang,OOP,2024
+Daniel Poedyasmara,Hieu Le,Spicy,2024
+Jae Won Kim,Miguel Heatherman,XLB,2022
+Winah Ruiz,Seeraj Somla,Fibona,2021
+Shirley Qi,Trisa Leung,Spicy,2021
+Khiem Pham,Yohan Hezkiya,Super Happy,2021
+Oviya Senthil,Nitya Pillai,Dino,2024
+Abel Seyoum,Tuan (Tony) Minh Tran,Anti Ordo Arbora,2022
+Beneen Fune,Melody Ruth,Bug-free,2022
+Emma Tayao,Shirley Qi,Spicy,2022
+Nina Ho,Asher Av,Bubble Milk,2021
+Khang Nguyen,Justin Lu,Wholesome Reacts,2024
+Jason Liang,Aaron Yu,XLB,2022
+Anurag Asthana,Vivian Tran,(None),2020
+Lloyd Seo,Andrew Zheng,Hypebeast,2024
+Cindy Zhang,Basil Thaddeus,XLB,2024
+Branson Beihl,Andrew Nguyen,Simp Sity,2020
+Manjusri Gobiraj,Paige Pagaduan,Penguin,2024
+Shravan Hariharan,Ronak Shah,Big Snacc,2020
+Ashlie Kim,Jenna Bui,FIG,2024
+Faith Lu,Jennifer Pham,Xiaoz,2021
+Alessandra Tjitro,Fiona Chen,Shark,2022
+Elizabeth Kao,Ragalina Palaka,Penguin,2024
+Shungo Najima,Jeremiah Alindogan,Unbalanced,2020
+Alvin Wang,Will Martino,Sober,2020
+Keerthi Nalabotu,Dhylan Patel,Penguin,2023
+Renee Lau,Matthew Pham,Bucket,2024
+Hana Tse,Edward De Leon,Wholesome Reacts,2022
+Felicia Zhang,Wanning Lu,OOP,2023
+Allison Kim,Anthony Gonzalez,Spicy,2023
+Faith Rivera,Jonathan Lum,Dino,2022
+Aaron Yu,Tristin Xie,Xiaoz,2021
+Richard Li,Asher Av,Bubble Milk,2021
+Naasik Jahan,Angkitha Anguraj,twee,2022
+Justin Bui,Jacob Lin,XLB,2022
+Jacob Bolano,Jeffrey Ha,Hypebeast,2022
+Anh Pham,Garrett Luu,(None),2020
+Jennifer Yu,Tuan (Tony) Minh Tran,OOP,2022
+Emily Jin,Anthony Manrique,Sober,2022
+Khushi Patel,Angela Hu,XLB,2023
+Dennis Luc,Ryan Xu,FLEX,2020
+Daphne Nong,Stanley Lee,Snu,2020
+Alice Wang,Purich Viwatkurkul,Legacy,2024
+Caitlin Lee,Kyrell Ringpis,Teletubbtree,2021
+Calvin Nguyen,Nathaniel del Rosario,Legacy,2023
+Yukati Gupta,Vanessa Chen,Strength,2021
+Wilson Nguyen,Julie Hang,Bubble Milk,2022
+Nathan Chung,Justin Bui,XLB,2022
+Hieu Le,Anthony Gonzalez,Spicy,2023
+Stephanie Tam,Charisse Hao,XLB,2022
+Linda Wu,Alvin Wang,Sober,2022
+Zander Vilaysane,Jacob Bolano,Hypebeast,2022
+Vanessa Hu,Alice Li,Bucket,2023
+Evelyn Ou,Jessica Wang,Wholesome Reacts,2023
+Jackie Piepkorn,Angkitha Anguraj,twee,2022
+Brandon Park,Hieu Phan,Wholesome Reacts,2023
+Kevin Lu,William Hu,Hypebeast,2022
+Adrian Apsay,Zander Vilaysane,Hypebeast,2023
+Hsiang-An Pao (Sean),Alexander Yu,Vialitree,2022
+Raj Nawal,Rahil Shah,Dino,2022
+Kristina Diep,Alistair Gray,Vialitree,2021
+Osheen Tikku,Raymond Sun,Penguin,2022
+Tiffany Chang,Maggie Mao,Bug-free,2020
+Joshua Chen,Henry Luu,Hypebeast,2022
+Edward Yang,Jose Guaro,Abstract,2020
+Julia Lee,Shirley Qi,Spicy,2022
+Andy Truong,Nishant Balaji,Penguin,2022
+Ragalina Palaka,Grace Yang,XLB,2022
+Dhylan Patel,Nishant Balaji,Penguin,2022
+Sumadhwa Guruprasad,Matthew Yom,(None),2022
+KJ Lee,Kaitlyn Chin,Bug-free,2022
+Nitya Pillai,Faris Ashai,Dino,2022
+Jennifer Hang,Vanessa Chen,Strength,2021
+Drew Chaudhari,Trevor Kwan,Truffula,2022
+Claire Liu,Richard Li,Bubble Milk,2022
+Faris Ashai,Sarp User,Moons of Uranus,2020
+Elias Fang,Daniel Truong,Spicy,2020
+Purich Viwatkurkul,Nathaniel del Rosario,Legacy,2023
+Steven Hsu,Saman Naseri,Fortnite,2022
+Tuan (Tony) Minh Tran,Matei-Alexandru Gardus,Anti Ordo Arbora,2021
+Kevin Sun,Angela Tsai,XLB,2024
+Judy Liu,Maggie Mao,Bug-free,2020
+Irene Liao,Richard Li,Bubble Milk,2022
+Tyler Hoang,Angelo Jensen,Legacy,2024
+Bryan Zhu,Rappel Ricafort,Bug-free,2022
+Elias Arghand,Yohan Hezkiya,Super Happy,2020
+Angkitha Anguraj,Dima Musa,twee,2021
+Gonzalo Allen-Perez,Nolan Chai,XLB,2022
+Thomas Garry,David Dempsey,Tall,2020
+Shih Wen Ma,Kyrell Ringpis,Teletubbtree,2021
+Julie Nguyen,Justin Lu,Wholesome Reacts,2023
+Andrew Chen,Charisse Hao,XLB,2022
+Hillary Chang,Kyle Tran,Wholesome Reacts,2024
+Shinhye Park,Celeste Keyes,Spicy,2023
+Tiffany Lee,Catherine Lee,(None - Pre-FIG),2021
+Michael Fu,Edward Yang,Abstract,2021
+Ada He,Matthew Pham,Bucket,2022
+Jonathan Lum,Faris Ashai,Dino,2022
+Samuel Wu,Elias Fang,Spicy,2022
+Aidan Bell,Bryan Espinoza Diaz,Korok,2021
+Andrew Nguyen (OwO),Alex Nguyen,OwO,2022
+Adam Levin,Yen-Ru (Rebecca) Chen,XLB,2024
+Melody Ruth,Tiffany Chang,Bug-free,2021
+Shunyi Du,Prisca He,XLB,2024
+Jeff Xu,Jeremiah Alindogan,Unbalanced,2020
+Catherine Hoang,Jenna Bui,FIG,2024
+Magnus Zuniga,Justin Bui,XLB,2022
+Cecilia Lin,Nitya Pillai,Dino,2023
+Ragalina Palaka,Nishant Balaji,Penguin,2022
+Kenneth Tran,Jeffrey Wang,Spicy,2022
+Fhujjen Barroga,Sarah Paull,Hypebeast,2023
+Iris Chou,Brenton Dunn,XLB,2023
+Brian Kwon,Jonah Soong,FLEX,2022
+Jason Sather,Kelynn Ma,Wholesome Reacts,2022
+Sarah Paull,Jacob Bolano,Hypebeast,2022
+Lam Nghiem,Yohan Hezkiya,Super Happy,2020
+Shreya Nagunuri,Osheen Tikku,Penguin,2023
+Theodore Nguyen,Dillen Padhiar,Priority,2020

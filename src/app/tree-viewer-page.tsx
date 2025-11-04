@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useMemo, useState, useEffect, Suspense } from 'react';
@@ -21,7 +20,6 @@ import {
   CardHeader,
   CardTitle,
   CardDescription,
-  CardContent,
 } from '@/components/ui/card';
 import type { TreeNode, Connection } from '@/lib/types';
 import { SearchDialog } from '@/components/search-dialog';
@@ -34,6 +32,8 @@ import React from 'react';
 import { HelpDialog } from '@/components/help-dialog';
 import Link from 'next/link';
 import { DisconnectedTrees } from '@/components/disconnected-trees';
+import { ManageConnections } from '@/components/manage-connections';
+import { AddConnectionForm } from '@/components/add-connection-form';
 
 type TreeViewerPageProps = {
   connections: Connection[];
@@ -57,10 +57,8 @@ function TreeViewerPageContent({ connections }: TreeViewerPageProps) {
   );
 
   useEffect(() => {
-    // Exclude '(None)' from redirection logic and disable when in admin mode
     if (!isAdmin && treeParam && treeParam !== '(None)' && treeAKAs[treeParam]) {
       const newTreeName = treeAKAs[treeParam];
-      // Only redirect if the current URL param is an old alias
       if (treeParam !== newTreeName) {
           const params = new URLSearchParams(searchParams.toString());
           params.set('tree', newTreeName);
@@ -124,13 +122,24 @@ function TreeViewerPageContent({ connections }: TreeViewerPageProps) {
           </SidebarHeader>
           <SidebarContent>
             <SidebarGroup>
+                <AddConnectionForm 
+                    people={allPeople.map(p => p.name)} 
+                    trees={allTrees} 
+                />
+            </SidebarGroup>
+            <Separator />
+             <SidebarGroup>
+                <ManageConnections connections={connections} people={allPeople.map(p => p.name)} trees={allTrees} />
+            </SidebarGroup>
+            <Separator />
+            <SidebarGroup>
                 <ShuffleLayoutButton
                     treeData={shuffledTreeData}
                     onShuffle={setShuffledTreeData}
                 />
             </SidebarGroup>
-            <Separator />
             <div className="mt-auto">
+              <Separator />
               <SidebarGroup>
                   <DisconnectedTrees treeNames={disconnectedTrees} />
               </SidebarGroup>
@@ -175,7 +184,6 @@ function TreeViewerPageContent({ connections }: TreeViewerPageProps) {
     );
   }
 
-  // Regular user view
   return (
     <div className="flex flex-col h-screen">
       <header className="flex items-center justify-between p-4 border-b sticky top-0 bg-background/80 backdrop-blur-sm z-20 h-16 shrink-0">
@@ -263,22 +271,23 @@ const OrgChartWrapper = ({ loading, connections, treeData, currentTreeName, tree
 
   return (
     <div className="h-[calc(100%-40px)]">
-      {treeData.length > 0 && (
+      {treeData.length > 0 ? (
         <OrgChart 
             data={treeData} 
             currentTreeName={currentTreeName} 
         />
-      )}
-      {treeData.length === 0 && treeParam && (
-        <Card className="mt-4">
-          <CardHeader>
-            <CardTitle>No Data in Tree</CardTitle>
-            <CardDescription>
-              No connections found for the '{currentTreeName}' tree. Try
-              selecting another tree or ask an administrator to add a new connection to the CSV file.
-            </CardDescription>
-          </CardHeader>
-        </Card>
+      ) : (
+         treeParam && (
+            <Card className="mt-4">
+              <CardHeader>
+                <CardTitle>No Data in Tree</CardTitle>
+                <CardDescription>
+                  No connections found for the '{currentTreeName}' tree. Try
+                  selecting another tree or ask an administrator to add a new connection to the CSV file.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          )
       )}
     </div>
   );
