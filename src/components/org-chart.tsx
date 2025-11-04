@@ -245,13 +245,13 @@ export function OrgChart({ data, currentTreeName }: OrgChartProps) {
                 <ZoomOut className="h-4 w-4" />
                 <span className="sr-only">Zoom Out</span>
             </Button>
-             <Button variant="outline" size="icon" onClick={handleExport} title="Export as PNG">
-                <Download className="h-4 w-4" />
-                <span className="sr-only">Export as PNG</span>
-            </Button>
             <Button variant="outline" size="icon" onClick={() => resetView(false)} title="Reset View">
                 <LocateFixed className="h-4 w-4" />
                 <span className="sr-only">Reset View</span>
+            </Button>
+             <Button variant="outline" size="icon" onClick={handleExport} title="Export as PNG">
+                <Download className="h-4 w-4" />
+                <span className="sr-only">Export as PNG</span>
             </Button>
         </div>
     </div>
