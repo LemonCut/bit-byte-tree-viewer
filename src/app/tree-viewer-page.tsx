@@ -34,6 +34,7 @@ import Link from 'next/link';
 import { DisconnectedTrees } from '@/components/disconnected-trees';
 import { ManageConnections } from '@/components/manage-connections';
 import { AddConnectionForm } from '@/components/add-connection-form';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 type TreeViewerPageProps = {
   connections: Connection[];
@@ -156,6 +157,7 @@ function TreeViewerPageContent({ connections }: TreeViewerPageProps) {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <ThemeToggle />
               <SearchDialog connections={connections || []} />
             </div>
           </header>
@@ -193,6 +195,7 @@ function TreeViewerPageContent({ connections }: TreeViewerPageProps) {
           <h1 className="text-xl font-bold">Bit-Byte Tree Viewer</h1>
         </Link>
         <div className="flex items-center gap-2">
+          <ThemeToggle />
           <SearchDialog connections={connections || []} />
         </div>
       </header>
