@@ -39,8 +39,8 @@ export function TreeSelector({ trees, defaultTree, className }: TreeSelectorProp
       </SelectTrigger>
       <SelectContent>
         {trees.map((tree) => (
-          <SelectItem key={tree} value={tree} disabled={tree === ''}>
-            {tree === '' ? 'Select a tree' : tree}
+          <SelectItem key={tree} value={tree}>
+            {tree}
           </SelectItem>
         ))}
       </SelectContent>
