@@ -59,6 +59,8 @@ export function OrgChart({ data, currentTreeName }: OrgChartProps) {
   >([]);
   
   const containerRef = useRef<HTMLDivElement>(null);
+  const chartWrapperRef = useRef<HTMLDivElement>(null);
+
   const [transform, setTransform] = useState({ scale: 1, x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
@@ -66,8 +68,8 @@ export function OrgChart({ data, currentTreeName }: OrgChartProps) {
   useEffect(() => {
     if (data && data.length > 0) {
       setChartData(formatDataForGoogleChart(data));
-      // Reset view when data changes
-      setTransform({ scale: 1, x: 0, y: 0 });
+      // Use a timeout to ensure the chart is rendered before resetting view
+      setTimeout(() => resetView(true), 100);
     } else {
       setChartData([]);
     }
@@ -75,7 +77,7 @@ export function OrgChart({ data, currentTreeName }: OrgChartProps) {
   
   const handleWheel = (e: WheelEvent<HTMLDivElement>) => {
     e.preventDefault();
-    const scaleAmount = -e.deltaY > 0 ? 1.1 : 1 / 1.1;
+    const scaleAmount = -e.deltaY > 0 ? 1.05 : 1 / 1.05; // Reduced zoom speed
     const newScale = Math.max(0.2, Math.min(transform.scale * scaleAmount, 5));
 
     if (!containerRef.current) return;
@@ -127,8 +129,27 @@ export function OrgChart({ data, currentTreeName }: OrgChartProps) {
     setTransform({ scale: newScale, x: newX, y: newY });
   };
 
-  const resetView = () => {
-    setTransform({ scale: 1, x: 0, y: 0 });
+  const resetView = (initial = false) => {
+    if (!containerRef.current || !chartWrapperRef.current) return;
+
+    const containerRect = containerRef.current.getBoundingClientRect();
+    const chartTable = chartWrapperRef.current.querySelector('table');
+
+    if (!chartTable) {
+        setTransform({ scale: 1, x: 0, y: 0 });
+        return;
+    };
+    
+    const chartRect = chartTable.getBoundingClientRect();
+    
+    // We get the chart's size relative to the unscaled wrapper
+    const chartWidth = chartRect.width / (initial ? 1 : transform.scale);
+    const chartHeight = chartRect.height / (initial ? 1 : transform.scale);
+
+    const centerX = (containerRect.width - chartWidth) / 2;
+    const centerY = (containerRect.height - chartHeight) / 2;
+
+    setTransform({ scale: 1, x: centerX, y: centerY });
   };
 
 
@@ -139,7 +160,8 @@ export function OrgChart({ data, currentTreeName }: OrgChartProps) {
   return (
     <div className="relative w-full h-full overflow-hidden cursor-grab" ref={containerRef} onWheel={handleWheel} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseLeave}>
       <div 
-        className="w-full h-full"
+        ref={chartWrapperRef}
+        className="w-full h-full absolute top-0 left-0"
         style={{
             transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
             transformOrigin: '0 0',
@@ -150,7 +172,7 @@ export function OrgChart({ data, currentTreeName }: OrgChartProps) {
             chartType="OrgChart"
             data={chartData}
             width="100%"
-            height="400px"
+            height="100%"
             options={{
                 allowHtml: true,
                 nodeClass: 'google-chart-node',
@@ -168,7 +190,7 @@ export function OrgChart({ data, currentTreeName }: OrgChartProps) {
                 <ZoomOut className="h-4 w-4" />
                 <span className="sr-only">Zoom Out</span>
             </Button>
-            <Button variant="outline" size="icon" onClick={resetView} title="Reset View">
+            <Button variant="outline" size="icon" onClick={() => resetView(false)} title="Reset View">
                 <LocateFixed className="h-4 w-4" />
                 <span className="sr-only">Reset View</span>
             </Button>
@@ -176,4 +198,3 @@ export function OrgChart({ data, currentTreeName }: OrgChartProps) {
     </div>
   );
 }
-
