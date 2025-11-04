@@ -1,11 +1,10 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
-import { FirebaseClientProvider } from '@/firebase';
 
 export const metadata: Metadata = {
   title: 'Bit-Byte Tree Viewer',
-  description: 'Visualize your organizational structures.',
+  description: 'Bit-byte tree viewer for ACM at UCSD.',
 };
 
 export default function RootLayout({
@@ -28,9 +27,7 @@ export default function RootLayout({
         />
       </head>
       <body className="font-body antialiased">
-        <FirebaseClientProvider>
-          {children}
-        </FirebaseClientProvider>
+        {children}
         <Toaster />
       </body>
     </html>

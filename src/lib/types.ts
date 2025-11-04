@@ -1,6 +1,6 @@
 
 export interface Connection {
-  id: string; // Firestore document ID
+  id: string; // Unique identifier for the connection
   bit: string;
   byte: string;
   tree: string;

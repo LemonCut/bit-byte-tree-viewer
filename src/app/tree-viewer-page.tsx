@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useMemo, useState, useEffect, useCallback } from 'react';
+import { useMemo, useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import {
   Sidebar,
@@ -10,14 +9,10 @@ import {
   SidebarGroup,
   SidebarProvider,
   SidebarTrigger,
-  SidebarGroupLabel,
 } from '@/components/ui/sidebar';
 import { TreeViewLogo } from '@/components/icons';
-import { buildTree, getTrees, getAllPeople, findTreeAKAs, findDisconnectedTrees } from '@/lib/data';
+import { getTrees, getAllPeople, findTreeAKAs, findDisconnectedTrees, Connection } from '@/lib/data';
 import { TreeSelector } from '@/components/tree-selector';
-import { ConnectionForm } from '@/components/connection-form';
-import { DataManagement } from '@/components/data-management';
-import { ModifyConnectionForm } from '@/components/modify-connection-form';
 import { OrgChart } from '@/components/org-chart';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -27,11 +22,8 @@ import {
   CardDescription,
   CardContent,
 } from '@/components/ui/card';
-import type { Connection, Person, TreeNode } from '@/lib/types';
+import type { TreeNode } from '@/lib/types';
 import { SearchDialog } from '@/components/search-dialog';
-import { useCollection, useMemoFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
-import { useFirestore } from '@/firebase';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AdminUnlock } from '@/components/admin-unlock';
 import { Button } from '@/components/ui/button';
@@ -42,23 +34,19 @@ import { HelpDialog } from '@/components/help-dialog';
 import Link from 'next/link';
 import { DisconnectedTrees } from '@/components/disconnected-trees';
 
+type TreeViewerPageProps = {
+  connections: Connection[];
+};
 
-export function TreeViewerPage() {
+function TreeViewerPageContent({ connections }: TreeViewerPageProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
-  const firestore = useFirestore();
   
   const [isAdmin, setIsAdmin] = useState(false);
   const [shuffledTreeData, setShuffledTreeData] = useState<TreeNode[] | null>(null);
   
-  const connectionsQuery = useMemoFirebase(
-    () => (firestore ? collection(firestore, 'connections') : null),
-    [firestore]
-  );
-  const { data: connections, isLoading: connectionsLoading } = useCollection<Connection>(connectionsQuery);
-
-  const loading = connectionsLoading;
+  const loading = !connections;
   
   const treeParam = searchParams.get('tree');
 
@@ -113,7 +101,6 @@ export function TreeViewerPage() {
     pageTitle = `${treeParam} Tree`;
   }
 
-
   const handleAdminToggle = () => {
     setIsAdmin(!isAdmin);
   };
@@ -136,26 +123,10 @@ export function TreeViewerPage() {
           </SidebarHeader>
           <SidebarContent>
             <SidebarGroup>
-              <ConnectionForm
-                currentTree={currentTreeName}
-                allPeople={allPeople}
-                connections={connections || []}
-              />
-            </SidebarGroup>
-            <Separator />
-            <SidebarGroup>
-                <ModifyConnectionForm connections={connections || []} allPeople={allPeople} />
-            </SidebarGroup>
-            <Separator />
-            <SidebarGroup>
                 <ShuffleLayoutButton
                     treeData={shuffledTreeData}
                     onShuffle={setShuffledTreeData}
                 />
-            </SidebarGroup>
-            <Separator />
-            <SidebarGroup>
-              <DataManagement connections={connections || []} />
             </SidebarGroup>
             <Separator />
             <SidebarGroup>
@@ -280,7 +251,7 @@ const OrgChartWrapper = ({ loading, connections, treeData, currentTreeName, tree
           <CardHeader>
             <CardTitle>No Data Found</CardTitle>
             <CardDescription>
-              Your database is empty. An administrator can import a CSV to get started.
+              Your `connections.csv` file is empty. An administrator can add data to get started.
             </CardDescription>
           </CardHeader>
         </Card>
@@ -301,11 +272,19 @@ const OrgChartWrapper = ({ loading, connections, treeData, currentTreeName, tree
             <CardTitle>No Data in Tree</CardTitle>
             <CardDescription>
               No connections found for the '{currentTreeName}' tree. Try
-              selecting another tree or ask an administrator to add a new connection.
+              selecting another tree or ask an administrator to add a new connection to the CSV file.
             </CardDescription>
-          </CardHeader>
+          </Header>
         </Card>
       )}
     </div>
+  )
+}
+
+export function TreeViewerPage({ connections }: TreeViewerPageProps) {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <TreeViewerPageContent connections={connections} />
+    </Suspense>
   )
 }

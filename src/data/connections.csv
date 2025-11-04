@@ -1,0 +1,14 @@
+byte,bit,tree,year
+Big A,Bit B,Alpha,2022
+Big A,Bit C,Alpha,2022
+Bit B,Bit D,Alpha,2023
+Bit C,Bit E,Alpha,2023
+Bit C,Bit F,Alpha,2023
+Big X,Bit Y,Zeta,2021
+Bit Y,Bit Z,Zeta,2022
+Mega,Giga,Omega,2020
+Giga,Tera,Omega,2021
+Root 1,Node A,Disconnected,2022
+Root 2,Node B,Disconnected,2022
+Old Root,Old Node,Old,2020
+Bit D,New Node,New,2024
