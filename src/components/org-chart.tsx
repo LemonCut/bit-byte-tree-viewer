@@ -181,7 +181,17 @@ export function OrgChart({ data, currentTreeName }: OrgChartProps) {
     const chartTable = chartWrapperRef.current.querySelector('table');
     if (!chartTable) return;
 
-    toPng(chartTable, { cacheBust: true, pixelRatio: 2 })
+    toPng(chartTable, { 
+        cacheBust: true, 
+        pixelRatio: 2,
+        // This option helps with CORS issues by not failing on remote resources.
+        fetchRequestInit: { 
+          headers: new Headers(),
+          mode: 'no-cors'
+        },
+        skipFonts: true,
+        fontEmbedCSS: ''
+    })
       .then((dataUrl) => {
         const link = document.createElement('a');
         link.download = `${currentTreeName}-tree.png`;
