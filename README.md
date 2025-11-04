@@ -1,5 +1,5 @@
-# Firebase Studio
+# Bit-Byte Tree Viewer
 
-This is a NextJS starter in Firebase Studio.
+Created for ACM at UCSD's bit-byte program. View trees and search for connections.
 
-To get started, take a look at src/app/page.tsx.
+Contact @lemoncut on Discord to report any inaccuracies.
