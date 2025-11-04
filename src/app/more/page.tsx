@@ -46,9 +46,12 @@ async function MorePageContent() {
   const connections = await getConnectionsData();
   const treeAKAs = findTreeAKAs(connections as Connection[]);
   const { allTrees, saplings } = getTrees(connections as Connection[]);
+  
+  const oldTreeNames = Object.keys(treeAKAs);
 
-  // Exclude saplings that are just old names for other trees
-  const trueSaplings = saplings.filter(s => !Object.keys(treeAKAs).includes(s));
+  // Exclude trees that are just old names for other trees.
+  const trueMainTrees = allTrees.filter(t => !oldTreeNames.includes(t));
+  const trueSaplings = saplings.filter(s => !oldTreeNames.includes(s));
 
 
   return (
@@ -73,13 +76,13 @@ async function MorePageContent() {
             <CardHeader>
               <CardTitle>Trees</CardTitle>
               <CardDescription>
-                The main family trees in the database.
+                The larger family trees in the database.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {allTrees.length > 0 ? (
+              {trueMainTrees.length > 0 ? (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                  {allTrees.map((tree) => (
+                  {trueMainTrees.map((tree) => (
                      <Button key={tree} variant="secondary" asChild>
                       <Link href={`/?tree=${encodeURIComponent(tree)}`}>
                         {tree}
@@ -101,7 +104,7 @@ async function MorePageContent() {
             <CardHeader>
               <CardTitle>Saplings</CardTitle>
               <CardDescription>
-                These are smaller, standalone trees with three or fewer members.
+                These are smaller, standalone trees with four or fewer members.
               </CardDescription>
             </CardHeader>
             <CardContent>
