@@ -1,3 +1,4 @@
+
 import type { Connection, TreeNode, SearchResult, TreeAKA, Person } from '@/lib/types';
 
 // This file is now primarily for the data transformation logic.
@@ -400,5 +401,5 @@ export function findDisconnectedTrees(connections: Connection[]): string[] {
   });
 
 
-  return Array.from(disconnectedTreeNames).sort();
+  return Array.from(disconnectedTreeNames).filter(name => name !== '(None)').sort();
 }
