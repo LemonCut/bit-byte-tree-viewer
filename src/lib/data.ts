@@ -322,34 +322,83 @@ export function findDisconnectedTrees(connections: Connection[]): string[] {
     return [];
   }
 
-  const trees: { [key: string]: Connection[] } = {};
-  connections.forEach(conn => {
-    const treeName = conn.tree || '(None)';
-    if (!trees[treeName]) {
-      trees[treeName] = [];
+  const allBitsGlobally = new Set(connections.map(c => c.bit));
+  const treeAKAs = findTreeAKAs(connections);
+
+  const canonicalTrees: { [key: string]: string[] } = {};
+  for (const treeName in treeAKAs) {
+    const canonicalName = treeAKAs[treeName];
+    if (!canonicalTrees[canonicalName]) {
+      canonicalTrees[canonicalName] = [];
     }
-    trees[treeName].push(conn);
-  });
+    canonicalTrees[canonicalName].push(treeName);
+  }
 
-  const disconnectedTreeNames: string[] = [];
+  const disconnectedTreeNames = new Set<string>();
 
-  for (const treeName in trees) {
-    if (treeName === '(None)') continue; // Skip the special '(None)' group
+  const allTreeNames = Array.from(new Set(connections.map(c => c.tree).filter(Boolean))) as string[];
 
-    const treeConnections = trees[treeName];
-    const bitsInTree = new Set(treeConnections.map(c => c.bit));
-    const roots = new Set<string>();
-
-    treeConnections.forEach(c => {
-      if (!bitsInTree.has(c.byte)) {
-        roots.add(c.byte);
+  for (const treeName of allTreeNames) {
+    const canonicalName = treeAKAs[treeName] || treeName;
+    
+    // Find all tree names that are part of this canonical group
+    const equivalentTreeNames = new Set([canonicalName]);
+    for (const aka in treeAKAs) {
+      if (treeAKAs[aka] === canonicalName) {
+        equivalentTreeNames.add(aka);
+      }
+    }
+    
+    const mergedTreeConnections = connections.filter(c => equivalentTreeNames.has(c.tree || '(None)'));
+    const bitsInMergedTree = new Set(mergedTreeConnections.map(c => c.bit));
+    
+    const rootsOfMergedTree = new Set<string>();
+    mergedTreeConnections.forEach(c => {
+      if (!bitsInMergedTree.has(c.byte)) {
+        rootsOfMergedTree.add(c.byte);
       }
     });
 
-    if (roots.size > 1) {
-      disconnectedTreeNames.push(treeName);
+    // A merged tree is disconnected if it has more than one "true" root.
+    // A "true" root is a root of the merged tree that is NOT a bit anywhere else.
+    let trueRootCount = 0;
+    rootsOfMergedTree.forEach(root => {
+      if (!allBitsGlobally.has(root)) {
+        trueRootCount++;
+      }
+    });
+
+    if (trueRootCount > 1) {
+      disconnectedTreeNames.add(canonicalName);
     }
   }
 
-  return disconnectedTreeNames.sort();
+  // Also check individual trees that are not part of any AKA mapping
+   allTreeNames.forEach(treeName => {
+    if (!treeAKAs[treeName] && !Object.values(treeAKAs).includes(treeName)) {
+      const treeConnections = connections.filter(c => c.tree === treeName);
+      const bitsInTree = new Set(treeConnections.map(c => c.bit));
+      const roots = new Set<string>();
+      treeConnections.forEach(c => {
+        if (!bitsInTree.has(c.byte)) {
+          roots.add(c.byte);
+        }
+      });
+
+      if (roots.size > 1) {
+         let trueRootCount = 0;
+          roots.forEach(root => {
+            if (!allBitsGlobally.has(root)) {
+              trueRootCount++;
+            }
+          });
+           if (trueRootCount > 1) {
+            disconnectedTreeNames.add(treeName);
+          }
+      }
+    }
+  });
+
+
+  return Array.from(disconnectedTreeNames).sort();
 }
