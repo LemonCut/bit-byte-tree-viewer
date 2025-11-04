@@ -37,7 +37,6 @@ import { DisconnectedTrees } from '@/components/disconnected-trees';
 import { ManageConnections } from '@/components/manage-connections';
 import { AddConnectionForm } from '@/components/add-connection-form';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { NumberInput } from '@/components/ui/number-input';
 
 type TreeViewerPageProps = {
   connections: Connection[];
@@ -50,7 +49,6 @@ function TreeViewerPageContent({ connections }: TreeViewerPageProps) {
   
   const [isAdmin, setIsAdmin] = useState(false);
   const [shuffledTreeData, setShuffledTreeData] = useState<TreeNode[] | null>(null);
-  const [saplingThreshold, setSaplingThreshold] = useState(3);
   
   const loading = !connections;
   
@@ -74,8 +72,8 @@ function TreeViewerPageContent({ connections }: TreeViewerPageProps) {
 
 
   const { allTrees } = useMemo(
-    () => (connections ? getTrees(connections, saplingThreshold, treeAKAs, isAdmin) : { allTrees: [], saplings: [] }),
-    [connections, saplingThreshold, treeAKAs, isAdmin]
+    () => (connections ? getTrees(connections, 4, treeAKAs, isAdmin) : { allTrees: [], saplings: [] }),
+    [connections, treeAKAs, isAdmin]
   );
   
   const currentTreeName = treeParam || '';
@@ -142,15 +140,6 @@ function TreeViewerPageContent({ connections }: TreeViewerPageProps) {
                 <ShuffleLayoutButton
                     treeData={shuffledTreeData}
                     onShuffle={setShuffledTreeData}
-                />
-            </SidebarGroup>
-            <Separator />
-            <SidebarGroup>
-                <SidebarGroupLabel>Sapling Threshold</SidebarGroupLabel>
-                <NumberInput
-                    value={saplingThreshold}
-                    onValueChange={setSaplingThreshold}
-                    min={0}
                 />
             </SidebarGroup>
             <div className="mt-auto">
