@@ -15,7 +15,10 @@ export async function verifyAdminPassword(prevState: any, formData: FormData) {
     return { success: false, message: 'Password is required.' };
   }
   
-  if (parsed.data.password === 'p') {
+  // Securely check against the environment variable, with a fallback to the old password.
+  const adminPassword = process.env.ADMIN_PASSWORD || 'p';
+
+  if (parsed.data.password === adminPassword) {
     return { success: true, message: 'Admin mode unlocked.' };
   }
 
