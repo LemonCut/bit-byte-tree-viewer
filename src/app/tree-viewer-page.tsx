@@ -125,6 +125,7 @@ function TreeViewerPageContent({ connections }: TreeViewerPageProps) {
                 <AddConnectionForm 
                     people={allPeople.map(p => p.name)} 
                     trees={allTrees} 
+                    currentTree={currentTreeName}
                 />
             </SidebarGroup>
             <Separator />

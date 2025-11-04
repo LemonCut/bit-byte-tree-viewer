@@ -55,6 +55,7 @@ interface AddConnectionFormProps {
   connection?: Connection;
   people: string[];
   trees: string[];
+  currentTree?: string;
   trigger?: React.ReactNode;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
@@ -64,6 +65,7 @@ export function AddConnectionForm({
     connection, 
     people, 
     trees,
+    currentTree,
     trigger,
     open: externalOpen,
     onOpenChange: externalOnOpenChange,
@@ -74,54 +76,55 @@ export function AddConnectionForm({
 
   const open = externalOpen ?? internalOpen;
   const onOpenChange = externalOnOpenChange ?? setInternalOpen;
+  
+  const defaultTreeValue = connection?.tree || (currentTree && currentTree !== 'No Trees Found' ? currentTree : '');
+
 
   const form = useForm<ConnectionFormValues>({
     resolver: zodResolver(connectionSchema),
     defaultValues: useMemo(() => ({
       bit: connection?.bit || '',
       byte: connection?.byte || '',
-      tree: connection?.tree || '',
+      tree: defaultTreeValue,
       year: connection?.year || new Date().getFullYear(),
-    }), [connection]),
+    }), [connection, defaultTreeValue]),
   });
   
   const action = isEditMode ? updateConnection : addConnection;
 
-  const handleSubmit = async (data: ConnectionFormValues) => {
-    const formData = new FormData();
-    Object.entries(data).forEach(([key, value]) => {
-      formData.append(key, String(value));
-    });
-    if (isEditMode && connection?.id) {
-        formData.append('id', connection.id);
+  const [state, formAction] = useFormState(action, {
+    success: false,
+    message: '',
+  });
+  
+   useEffect(() => {
+    if (state.message) {
+      if (state.success) {
+        onOpenChange(false);
+        form.reset();
+        toast({
+          title: 'Success!',
+          description: state.message,
+        });
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: state.message || 'An unknown error occurred.',
+        });
+      }
     }
-    
-    const result = await action(null, formData);
+  }, [state, onOpenChange, toast, form]);
 
-    if (result.success) {
-      onOpenChange(false);
-      form.reset();
-      toast({
-        title: 'Success!',
-        description: result.message,
-      });
-    } else {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: result.message || 'An unknown error occurred.',
-      });
-    }
-  };
 
   useEffect(() => {
     form.reset({
       bit: connection?.bit || '',
       byte: connection?.byte || '',
-      tree: connection?.tree || '',
+      tree: defaultTreeValue,
       year: connection?.year || new Date().getFullYear(),
     });
-  }, [connection, form, open]);
+  }, [connection, form, open, defaultTreeValue]);
   
   const peopleOptions = people.map(p => ({ label: p, value: p }));
   const treeOptions = trees.map(t => ({ label: t, value: t }));
@@ -156,7 +159,17 @@ export function AddConnectionForm({
         </DialogHeader>
         <Form {...form}>
           <form
-             onSubmit={form.handleSubmit(handleSubmit)}
+             action={formAction}
+             onSubmit={form.handleSubmit(data => {
+                const formData = new FormData();
+                Object.entries(data).forEach(([key, value]) => {
+                  formData.append(key, String(value));
+                });
+                if (isEditMode && connection?.id) {
+                    formData.append('id', connection.id);
+                }
+                formAction(formData);
+             })}
             className="space-y-4"
           >
             <FormField
