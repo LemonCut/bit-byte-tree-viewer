@@ -128,7 +128,6 @@ export function OrgChart({ data, currentTreeName }: OrgChartProps) {
   }
   
   const handleTouchStart = (e: TouchEvent<HTMLDivElement>) => {
-    if ((e.target as HTMLElement).closest('.google-visualization-orgchart-node')) return;
     e.preventDefault();
 
     if (e.touches.length === 1) {
@@ -143,7 +142,6 @@ export function OrgChart({ data, currentTreeName }: OrgChartProps) {
   }
 
   const handleTouchMove = (e: TouchEvent<HTMLDivElement>) => {
-    if ((e.target as HTMLElement).closest('.google-visualization-orgchart-node')) return;
     e.preventDefault();
 
     if (e.touches.length === 1 && isPanning) {
@@ -323,3 +321,5 @@ export function OrgChart({ data, currentTreeName }: OrgChartProps) {
     </div>
   );
 }
+
+    
