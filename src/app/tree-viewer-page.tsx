@@ -237,7 +237,7 @@ const OrgChartWrapper = ({ loading, connections, treeData, currentTreeName, tree
                     <div className="mx-auto bg-primary/20 p-3 rounded-full w-fit">
                         <Share2 className="w-8 h-8 text-primary" />
                     </div>
-                    <CardTitle className="mt-4">Welcome to Bit-Byte Tree Viewer</CardTitle>
+                    <CardTitle className="mt-4">Welcome to the Bit-Byte Tree Viewer</CardTitle>
                     <CardDescription>
                         To get started, select a tree from the dropdown menu at the top right, or use the search icon to find a specific person.
                     </CardDescription>
