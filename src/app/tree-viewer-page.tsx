@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo, useState, useEffect, Suspense } from 'react';
@@ -276,12 +277,12 @@ const OrgChartWrapper = ({ loading, connections, treeData, currentTreeName, tree
               No connections found for the '{currentTreeName}' tree. Try
               selecting another tree or ask an administrator to add a new connection to the CSV file.
             </CardDescription>
-          </Header>
+          </CardHeader>
         </Card>
       )}
     </div>
-  )
-}
+  );
+};
 
 export function TreeViewerPage({ connections }: TreeViewerPageProps) {
   return (
