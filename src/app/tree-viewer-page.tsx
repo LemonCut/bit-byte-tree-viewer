@@ -74,7 +74,7 @@ function TreeViewerPageContent({ connections }: TreeViewerPageProps) {
     [connections, treeAKAs, isAdmin]
   );
   
-  const currentTreeName = treeParam || allTrees[0] || 'No Trees Found';
+  const currentTreeName = treeParam || '';
 
   const allPeople = useMemo(
     () => (connections ? getAllPeople(connections) : []),
@@ -125,13 +125,13 @@ function TreeViewerPageContent({ connections }: TreeViewerPageProps) {
             <SidebarGroup>
                 <AddConnectionForm 
                     people={allPeople.map(p => p.name)} 
-                    trees={allTrees} 
+                    trees={allTrees.filter(t => t !== '')} 
                     currentTree={currentTreeName}
                 />
             </SidebarGroup>
             <Separator />
              <SidebarGroup>
-                <ManageConnections connections={connections} people={allPeople.map(p => p.name)} trees={allTrees} />
+                <ManageConnections connections={connections} people={allPeople.map(p => p.name)} trees={allTrees.filter(t => t !== '')} />
             </SidebarGroup>
             <Separator />
             <SidebarGroup>

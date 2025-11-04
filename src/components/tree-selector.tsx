@@ -32,19 +32,17 @@ export function TreeSelector({ trees, defaultTree, className }: TreeSelectorProp
   };
 
   return (
-    <Select onValueChange={handleSelect} defaultValue={defaultTree}>
+    <Select onValueChange={handleSelect} value={defaultTree}>
       <SelectTrigger className={cn('w-full', className)}>
         <SelectValue placeholder="Select a tree" />
       </SelectTrigger>
       <SelectContent>
         {trees.map((tree) => (
-          <SelectItem key={tree} value={tree}>
-            {tree}
+          <SelectItem key={tree} value={tree} disabled={tree === ''}>
+            {tree === '' ? 'Select a tree' : tree}
           </SelectItem>
         ))}
       </SelectContent>
     </Select>
   );
 }
-
-    

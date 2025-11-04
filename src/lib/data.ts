@@ -1,4 +1,3 @@
-
 import type { Connection, TreeNode, SearchResult, TreeAKA, Person } from '@/lib/types';
 
 // This file is now primarily for the data transformation logic.
@@ -24,16 +23,17 @@ export function getTrees(connections: Connection[], treeAKAs: TreeAKA = {}, isAd
   }
 
   const sortedTrees = Array.from(treeNames).sort();
+  const finalTrees = ['']; // Start with a blank option for the default state.
 
   // Ensure '(None)' is at the bottom if it exists
   if (sortedTrees.includes('(None)')) {
-    return {
-      allTrees: [...sortedTrees.filter(t => t !== '(None)'), '(None)'],
-    };
+    finalTrees.push(...sortedTrees.filter(t => t !== '(None)'), '(None)');
+  } else {
+    finalTrees.push(...sortedTrees);
   }
   
   return {
-    allTrees: sortedTrees,
+    allTrees: finalTrees,
   };
 }
 
