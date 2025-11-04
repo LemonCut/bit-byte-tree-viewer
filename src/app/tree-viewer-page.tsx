@@ -148,7 +148,7 @@ function TreeViewerPageContent({ connections }: TreeViewerPageProps) {
             </div>
           </SidebarContent>
         </Sidebar>
-        <div className="flex flex-col flex-1 min-w-0">
+        <div className="flex flex-col flex-1 min-h-0 h-screen">
           <header className="flex items-center justify-between p-4 border-b sticky top-0 bg-background/80 backdrop-blur-sm z-20 h-16 shrink-0">
             <div className="flex items-center gap-4">
               <SidebarTrigger className="md:hidden" />
@@ -169,8 +169,8 @@ function TreeViewerPageContent({ connections }: TreeViewerPageProps) {
                     <TreeSelector trees={allTrees} defaultTree={currentTreeName} className="w-[200px] bg-background rounded-md shadow-md" />
                 )}
             </div>
-            <div className="p-4 md:p-6 lg:p-8 h-full overflow-auto">
-              <div className="mb-4">
+            <div className="p-4 md:p-6 lg:p-8 h-full">
+              <div className="mb-4 h-[40px]">
                   <h2 className="text-2xl font-bold tracking-tight">{pageTitle}</h2>
               </div>
               <OrgChartWrapper 
@@ -188,7 +188,7 @@ function TreeViewerPageContent({ connections }: TreeViewerPageProps) {
   }
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col h-screen overflow-hidden">
       <header className="flex items-center justify-between p-4 border-b sticky top-0 bg-background/80 backdrop-blur-sm z-20 h-16 shrink-0">
         <Link href="/" className="flex items-center gap-2">
           <TreeViewLogo className="w-8 h-8" />
@@ -199,7 +199,7 @@ function TreeViewerPageContent({ connections }: TreeViewerPageProps) {
           <SearchDialog connections={connections || []} />
         </div>
       </header>
-      <div className="relative flex-1">
+      <div className="relative flex-1 overflow-hidden">
         <div className="absolute top-4 right-4 z-10">
            {loading ? (
               <Skeleton className="h-10 w-[200px]" />
@@ -208,8 +208,8 @@ function TreeViewerPageContent({ connections }: TreeViewerPageProps) {
             )}
         </div>
         <main className="h-full overflow-auto">
-          <div className="p-4 md:p-6 lg:p-8 h-full overflow-auto">
-             <div className="mb-4">
+          <div className="p-4 md:p-6 lg:p-8 h-full">
+             <div className="mb-4 h-[40px]">
                 <h2 className="text-2xl font-bold tracking-tight">{pageTitle}</h2>
             </div>
             <OrgChartWrapper 
@@ -274,7 +274,7 @@ const OrgChartWrapper = ({ loading, connections, treeData, currentTreeName, tree
   }
 
   return (
-    <div className="h-[calc(100%-40px)]">
+    <div className="h-[calc(100%-56px)]">
       {treeData.length > 0 ? (
         <OrgChart 
             data={treeData} 
