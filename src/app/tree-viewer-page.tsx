@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo, useState, useEffect, Suspense } from 'react';
@@ -70,7 +71,7 @@ function TreeViewerPageContent({ connections }: TreeViewerPageProps) {
 
 
   const { allTrees } = useMemo(
-    () => (connections ? getTrees(connections, treeAKAs, isAdmin) : { allTrees: [] }),
+    () => (connections ? getTrees(connections, treeAKAs, isAdmin) : { allTrees: [], saplings: [] }),
     [connections, treeAKAs, isAdmin]
   );
   

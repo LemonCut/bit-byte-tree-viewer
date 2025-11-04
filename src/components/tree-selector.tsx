@@ -8,6 +8,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  SelectSeparator,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 
@@ -20,9 +21,13 @@ type TreeSelectorProps = {
 export function TreeSelector({ trees, defaultTree, className }: TreeSelectorProps) {
   const searchParams = useSearchParams();
   const pathname = usePathname();
-  const { replace } = useRouter();
+  const { replace, push } = useRouter();
 
   const handleSelect = (treeName: string) => {
+    if (treeName === 'more') {
+      push('/more');
+      return;
+    }
     const params = new URLSearchParams(searchParams.toString());
     if (treeName) {
       params.set('tree', treeName);
@@ -43,6 +48,8 @@ export function TreeSelector({ trees, defaultTree, className }: TreeSelectorProp
             {tree}
           </SelectItem>
         ))}
+        {trees.length > 0 && <SelectSeparator />}
+        <SelectItem value="more">More...</SelectItem>
       </SelectContent>
     </Select>
   );

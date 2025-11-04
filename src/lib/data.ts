@@ -4,39 +4,54 @@ import type { Connection, TreeNode, SearchResult, TreeAKA, Person } from '@/lib/
 // This file is now primarily for the data transformation logic.
 // The data itself will be read from a local CSV file.
 
-export function getTrees(connections: Connection[], treeAKAs: TreeAKA = {}, isAdmin: boolean = false): { allTrees: string[] } {
+export function getTrees(connections: Connection[], treeAKAs: TreeAKA = {}, isAdmin: boolean = false): { allTrees: string[], saplings: string[] } {
   const treeNames = new Set<string>();
   connections.forEach((c) => {
     const treeName = c.tree || '(None)';
     treeNames.add(treeName);
   });
   
-  // In regular mode, filter out old tree names that have been renamed/merged
   if (!isAdmin) {
     const oldTreeNames = Object.keys(treeAKAs);
     const canonicalTreeNames = new Set(Object.values(treeAKAs));
     oldTreeNames.forEach(oldName => {
-      // Only remove the old name if it's not also a canonical name for another tree
       if (!canonicalTreeNames.has(oldName)) {
         treeNames.delete(oldName);
       }
     });
   }
 
-  const sortedTrees = Array.from(treeNames).sort();
-  const finalTrees: string[] = [];
+  const allTreesList = Array.from(treeNames);
+  const mainTrees: string[] = [];
+  const saplings: string[] = [];
 
-  // Ensure '(None)' is at the bottom if it exists
-  if (sortedTrees.includes('(None)')) {
-    finalTrees.push(...sortedTrees.filter(t => t !== '(None)'), '(None)');
-  } else {
-    finalTrees.push(...sortedTrees);
-  }
+  allTreesList.forEach(treeName => {
+    if (treeName === '(None)') return;
+
+    const peopleInTree = new Set<string>();
+    connections.forEach(c => {
+      if (c.tree === treeName) {
+        peopleInTree.add(c.bit);
+        peopleInTree.add(c.byte);
+      }
+    });
+
+    if (peopleInTree.size <= 3) {
+      saplings.push(treeName);
+    } else {
+      mainTrees.push(treeName);
+    }
+  });
+
+  mainTrees.sort();
+  saplings.sort();
   
   return {
-    allTrees: finalTrees,
+    allTrees: mainTrees,
+    saplings: saplings,
   };
 }
+
 
 export function getAllPeople(connections: Connection[]): Person[] {
   const peopleNames = new Set<string>();
