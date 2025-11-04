@@ -5,7 +5,8 @@ import { Chart } from 'react-google-charts';
 import type { TreeNode } from '@/lib/types';
 import { useEffect, useState, useRef, WheelEvent, MouseEvent } from 'react';
 import { Button } from './ui/button';
-import { ZoomIn, ZoomOut, LocateFixed } from 'lucide-react';
+import { ZoomIn, ZoomOut, LocateFixed, Download } from 'lucide-react';
+import { toPng } from 'html-to-image';
 
 interface OrgChartProps {
   data: TreeNode[];
@@ -136,27 +137,51 @@ export function OrgChart({ data, currentTreeName }: OrgChartProps) {
     const chartTable = chartWrapperRef.current.querySelector('table');
 
     if (!chartTable) {
-        setTransform({ scale: 1, x: 0, y: 0 });
-        return;
-    };
-    
-    // On initial load, the chart might not have its final size, so we get its raw dimensions
-    const chartRect = chartTable.getBoundingClientRect();
-    const chartWidth = chartRect.width / (initial ? 1 : transform.scale);
-    const chartHeight = chartRect.height / (initial ? 1 : transform.scale);
-    
+      setTransform({ scale: 1, x: 0, y: 0 });
+      return;
+    }
+
+    // Use the raw dimensions of the chart table itself for calculations
+    const chartWidth = chartTable.offsetWidth;
+    const chartHeight = chartTable.offsetHeight;
+
     if (chartWidth === 0 || chartHeight === 0) return;
 
-    // Calculate the scale to fit the entire chart, with some padding
+    // Calculate scale to fit the chart, with padding
     const scaleX = containerRect.width / chartWidth;
     const scaleY = containerRect.height / chartHeight;
-    const newScale = Math.min(scaleX, scaleY) * 0.95; // 5% padding
+    let newScale = Math.min(scaleX, scaleY) * 0.95;
 
+    // If the tree is smaller than the container, don't zoom in past 100%
+    if (newScale > 1) {
+      newScale = 1;
+    }
+    
     // Center the chart
-    const newX = (containerRect.width - (chartWidth * newScale)) / 2;
-    const newY = (containerRect.height - (chartHeight * newScale)) / 2;
-
+    const newX = (containerRect.width - chartWidth * newScale) / 2;
+    const newY = (containerRect.height - chartHeight * newScale) / 2;
+    
     setTransform({ scale: newScale, x: newX, y: newY });
+  };
+
+  const handleExport = () => {
+    if (chartWrapperRef.current === null) {
+      return;
+    }
+    
+    const chartTable = chartWrapperRef.current.querySelector('table');
+    if (!chartTable) return;
+
+    toPng(chartTable, { cacheBust: true, pixelRatio: 2 })
+      .then((dataUrl) => {
+        const link = document.createElement('a');
+        link.download = `${currentTreeName}-tree.png`;
+        link.href = dataUrl;
+        link.click();
+      })
+      .catch((err) => {
+        console.error('Failed to export chart', err);
+      });
   };
 
 
@@ -168,7 +193,7 @@ export function OrgChart({ data, currentTreeName }: OrgChartProps) {
     <div className="relative w-full h-full overflow-hidden cursor-grab" ref={containerRef} onWheel={handleWheel} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseLeave}>
       <div 
         ref={chartWrapperRef}
-        className="w-full h-full absolute top-0 left-0"
+        className="w-min h-min absolute top-0 left-0"
         style={{
             transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
             transformOrigin: '0 0',
@@ -196,6 +221,10 @@ export function OrgChart({ data, currentTreeName }: OrgChartProps) {
             <Button variant="outline" size="icon" onClick={() => handleZoom('out')} title="Zoom Out">
                 <ZoomOut className="h-4 w-4" />
                 <span className="sr-only">Zoom Out</span>
+            </Button>
+             <Button variant="outline" size="icon" onClick={handleExport} title="Export as PNG">
+                <Download className="h-4 w-4" />
+                <span className="sr-only">Export as PNG</span>
             </Button>
             <Button variant="outline" size="icon" onClick={() => resetView(false)} title="Reset View">
                 <LocateFixed className="h-4 w-4" />
