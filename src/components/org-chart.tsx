@@ -140,16 +140,23 @@ export function OrgChart({ data, currentTreeName }: OrgChartProps) {
         return;
     };
     
+    // On initial load, the chart might not have its final size, so we get its raw dimensions
     const chartRect = chartTable.getBoundingClientRect();
-    
-    // We get the chart's size relative to the unscaled wrapper
     const chartWidth = chartRect.width / (initial ? 1 : transform.scale);
     const chartHeight = chartRect.height / (initial ? 1 : transform.scale);
+    
+    if (chartWidth === 0 || chartHeight === 0) return;
 
-    const centerX = (containerRect.width - chartWidth) / 2;
-    const centerY = (containerRect.height - chartHeight) / 2;
+    // Calculate the scale to fit the entire chart, with some padding
+    const scaleX = containerRect.width / chartWidth;
+    const scaleY = containerRect.height / chartHeight;
+    const newScale = Math.min(scaleX, scaleY) * 0.95; // 5% padding
 
-    setTransform({ scale: 1, x: centerX, y: centerY });
+    // Center the chart
+    const newX = (containerRect.width - (chartWidth * newScale)) / 2;
+    const newY = (containerRect.height - (chartHeight * newScale)) / 2;
+
+    setTransform({ scale: newScale, x: newX, y: newY });
   };
 
 
