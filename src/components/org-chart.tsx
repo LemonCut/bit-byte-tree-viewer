@@ -7,6 +7,7 @@ import { useEffect, useState, useRef, WheelEvent, MouseEvent, TouchEvent } from 
 import { Button } from './ui/button';
 import { ZoomIn, ZoomOut, LocateFixed, Download } from 'lucide-react';
 import { toPng } from 'html-to-image';
+import { cn } from '@/lib/utils';
 
 interface OrgChartProps {
   data: TreeNode[];
@@ -105,7 +106,6 @@ export function OrgChart({ data, currentTreeName }: OrgChartProps) {
   };
 
   const handleMouseDown = (e: MouseEvent<HTMLDivElement>) => {
-    if ((e.target as HTMLElement).closest('.google-visualization-orgchart-node')) return;
     e.preventDefault();
     setIsPanning(true);
     setPanStart({ x: e.clientX - transform.x, y: e.clientY - transform.y });
@@ -129,7 +129,6 @@ export function OrgChart({ data, currentTreeName }: OrgChartProps) {
   
   const handleTouchStart = (e: TouchEvent<HTMLDivElement>) => {
     e.preventDefault();
-
     if (e.touches.length === 1) {
       setIsPanning(true);
       setPanStart({ x: e.touches[0].clientX - transform.x, y: e.touches[0].clientY - transform.y });
@@ -279,7 +278,10 @@ export function OrgChart({ data, currentTreeName }: OrgChartProps) {
     >
       <div 
         ref={chartWrapperRef}
-        className="w-min h-min absolute top-0 left-0"
+        className={cn(
+          "w-min h-min absolute top-0 left-0",
+          "pointer-events-none" // This is the key fix
+        )}
         style={{
             transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
             transformOrigin: '0 0',
