@@ -11,14 +11,6 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -30,12 +22,13 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Button } from './ui/button';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Pencil } from 'lucide-react';
 import { AddConnectionForm } from './add-connection-form';
 import { deleteConnection } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
-import { Input } from './ui/input';
-import { useDebounce } from 'use-debounce';
+import { Combobox } from './ui/combobox';
+import { Badge } from './ui/badge';
+import { Separator } from './ui/separator';
 
 interface ManageConnectionsProps {
   connections: Connection[];
@@ -45,8 +38,8 @@ interface ManageConnectionsProps {
 
 export function ManageConnections({ connections, people, trees }: ManageConnectionsProps) {
   const { toast } = useToast();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [debouncedSearchTerm] = useDebounce(searchTerm, 300);
+  const [selectedPerson, setSelectedPerson] = useState<string | null>(null);
+  const [editingConnectionId, setEditingConnectionId] = useState<string | null>(null);
 
   const handleDelete = async (id: string) => {
     const result = await deleteConnection(id);
@@ -55,6 +48,11 @@ export function ManageConnections({ connections, people, trees }: ManageConnecti
         title: 'Success!',
         description: result.message,
       });
+      // If we deleted the last connection for a person, reset the view
+      const remainingConnections = personConnections.filter(c => c.id !== id);
+      if (remainingConnections.length === 0) {
+        setSelectedPerson(null);
+      }
     } else {
       toast({
         variant: 'destructive',
@@ -63,85 +61,106 @@ export function ManageConnections({ connections, people, trees }: ManageConnecti
       });
     }
   };
+  
+  const handleSelectPerson = (person: string) => {
+    setSelectedPerson(person);
+  };
+  
+  const peopleOptions = people.map(p => ({ label: p, value: p }));
+  
+  const personConnections = selectedPerson
+    ? connections.filter(c => c.bit === selectedPerson || c.byte === selectedPerson)
+    : [];
 
-  const filteredConnections = connections.filter(c => {
-    const search = debouncedSearchTerm.toLowerCase();
-    return (
-      c.bit.toLowerCase().includes(search) ||
-      c.byte.toLowerCase().includes(search) ||
-      c.tree.toLowerCase().includes(search) ||
-      c.year.toString().includes(search)
-    );
-  }).sort((a, b) => a.tree.localeCompare(b.tree) || a.year - b.year);
+  const getRole = (connection: Connection) => {
+    if (connection.byte === selectedPerson) {
+      return { role: 'Byte of', other: connection.bit };
+    }
+    return { role: 'Bit of', other: connection.byte };
+  };
+
+  const editingConnection = connections.find(c => c.id === editingConnectionId);
 
   return (
     <Card className="bg-transparent border-none shadow-none">
       <CardHeader className="p-0 mb-4">
         <CardTitle className="text-lg">Manage Connections</CardTitle>
         <CardDescription>
-          View, edit, or delete existing connections.
+          Search for a person to view and edit their connections.
         </CardDescription>
       </CardHeader>
       <CardContent className="p-0">
-        <Input 
-            placeholder="Search connections..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="mb-4"
+        <Combobox
+            options={peopleOptions}
+            value={selectedPerson || ''}
+            onChange={handleSelectPerson}
+            placeholder="Search for a person..."
         />
-        <div className="max-h-96 overflow-y-auto border rounded-md">
-          <Table>
-            <TableHeader className="sticky top-0 bg-secondary">
-              <TableRow>
-                <TableHead>Bit</TableHead>
-                <TableHead>Byte</TableHead>
-                <TableHead>Tree</TableHead>
-                <TableHead>Year</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredConnections.map((conn) => (
-                <TableRow key={conn.id}>
-                  <TableCell>{conn.bit}</TableCell>
-                  <TableCell>{conn.byte}</TableCell>
-                  <TableCell>{conn.tree}</TableCell>
-                  <TableCell>{conn.year}</TableCell>
-                  <TableCell className="flex justify-end gap-2">
-                    <AddConnectionForm
-                      connection={conn}
-                      people={people}
-                      trees={trees}
-                    />
-                     <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                            <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This action cannot be undone. This will permanently delete the connection between {conn.bit} and {conn.byte}.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => handleDelete(conn.id)}>
-                            Delete
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-        {filteredConnections.length === 0 && (
-            <p className="text-center text-sm text-muted-foreground mt-4">No connections found.</p>
+        
+        {selectedPerson && (
+            <div className="mt-4">
+                 <div className="flex justify-between items-center mb-2">
+                    <h3 className="font-semibold">{selectedPerson}'s Connections</h3>
+                    <Button variant="ghost" size="sm" onClick={() => setSelectedPerson(null)}>Clear</Button>
+                </div>
+                {personConnections.length > 0 ? (
+                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                        {personConnections.map(conn => {
+                            const { role, other } = getRole(conn);
+                            return (
+                                <Card key={conn.id} className="p-3">
+                                    <div className="flex justify-between items-center">
+                                        <div className="text-sm">
+                                            <p><Badge variant="secondary" className="mr-2">{role}</Badge> {other}</p>
+                                            <p className="text-muted-foreground mt-1">{conn.tree} - {conn.year}</p>
+                                        </div>
+                                        <div className="flex gap-1">
+                                            <Button variant="ghost" size="icon" onClick={() => setEditingConnectionId(conn.id)}>
+                                                <Pencil className="h-4 w-4" />
+                                            </Button>
+                                            <AlertDialog>
+                                                <AlertDialogTrigger asChild>
+                                                    <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                </AlertDialogTrigger>
+                                                <AlertDialogContent>
+                                                    <AlertDialogHeader>
+                                                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                        <AlertDialogDescription>
+                                                            This action cannot be undone. This will permanently delete the connection.
+                                                        </AlertDialogDescription>
+                                                    </AlertDialogHeader>
+                                                    <AlertDialogFooter>
+                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                        <AlertDialogAction
+                                                            className="bg-destructive hover:bg-destructive/90"
+                                                            onClick={() => handleDelete(conn.id)}>
+                                                            Delete
+                                                        </AlertDialogAction>
+                                                    </AlertDialogFooter>
+                                                </AlertDialogContent>
+                                            </AlertDialog>
+                                        </div>
+                                    </div>
+                                </Card>
+                            )
+                        })}
+                    </div>
+                ): (
+                    <p className="text-center text-sm text-muted-foreground mt-4">No connections found for {selectedPerson}.</p>
+                )}
+            </div>
+        )}
+
+        {editingConnection && (
+            <AddConnectionForm
+                connection={editingConnection}
+                people={people}
+                trees={trees}
+                open={!!editingConnectionId}
+                onOpenChange={(isOpen) => !isOpen && setEditingConnectionId(null)}
+            />
         )}
       </CardContent>
     </Card>

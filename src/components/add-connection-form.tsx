@@ -6,7 +6,6 @@ import { useFormState, useFormStatus } from 'react-dom';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { useDebounce } from 'use-debounce';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -56,12 +55,25 @@ interface AddConnectionFormProps {
   connection?: Connection;
   people: string[];
   trees: string[];
+  trigger?: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export function AddConnectionForm({ connection, people, trees }: AddConnectionFormProps) {
-  const [open, setOpen] = useState(false);
+export function AddConnectionForm({ 
+    connection, 
+    people, 
+    trees,
+    trigger,
+    open: externalOpen,
+    onOpenChange: externalOnOpenChange,
+}: AddConnectionFormProps) {
+  const [internalOpen, setInternalOpen] = useState(false);
   const { toast } = useToast();
   const isEditMode = !!connection;
+
+  const open = externalOpen ?? internalOpen;
+  const onOpenChange = externalOnOpenChange ?? setInternalOpen;
 
   const form = useForm<ConnectionFormValues>({
     resolver: zodResolver(connectionSchema),
@@ -80,14 +92,14 @@ export function AddConnectionForm({ connection, people, trees }: AddConnectionFo
       tree: connection?.tree || '',
       year: connection?.year || new Date().getFullYear(),
     });
-  }, [connection, form]);
+  }, [connection, form, open]);
   
   const action = isEditMode ? updateConnection : addConnection;
   const [state, formAction] = useFormState(action, { success: false, message: '' });
 
   useEffect(() => {
     if (state.success) {
-      setOpen(false);
+      onOpenChange(false);
       form.reset();
       toast({
         title: 'Success!',
@@ -100,25 +112,32 @@ export function AddConnectionForm({ connection, people, trees }: AddConnectionFo
         description: state.message,
       });
     }
-  }, [state, toast, form]);
+  }, [state, toast, form, onOpenChange]);
   
   const peopleOptions = people.map(p => ({ label: p, value: p }));
   const treeOptions = trees.map(t => ({ label: t, value: t }));
 
+  const dialogTrigger = trigger ? (
+    <DialogTrigger asChild>{trigger}</DialogTrigger>
+  ) : (
+    <DialogTrigger asChild>
+      {isEditMode ? (
+        <Button variant="ghost" size="icon">
+          <Pencil className="h-4 w-4" />
+          <span className="sr-only">Edit Connection</span>
+        </Button>
+      ) : (
+        <Button className="w-full">
+          <Plus className="mr-2 h-4 w-4" />
+          Add Connection
+        </Button>
+      )}
+    </DialogTrigger>
+  );
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {isEditMode ? (
-          <Button variant="ghost" size="icon">
-            <Pencil className="h-4 w-4" />
-          </Button>
-        ) : (
-          <Button className="w-full">
-            <Plus className="mr-2 h-4 w-4" />
-            Add Connection
-          </Button>
-        )}
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+        {dialogTrigger}
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{isEditMode ? 'Modify Connection' : 'Add New Connection'}</DialogTitle>
