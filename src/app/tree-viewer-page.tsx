@@ -37,6 +37,7 @@ import { DisconnectedTrees } from '@/components/disconnected-trees';
 import { ManageConnections } from '@/components/manage-connections';
 import { AddConnectionForm } from '@/components/add-connection-form';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { PageLoader } from '@/components/page-loader';
 
 type TreeViewerPageProps = {
   connections: Connection[];
