@@ -76,7 +76,7 @@ function TreeViewerPageContent({ connections }: TreeViewerPageProps) {
 
 
   const { allTrees } = useMemo(
-    () => (connections ? getTrees(connections, 4, treeAKAs, isAdmin) : { allTrees: [], saplings: [] }),
+    () => (connections ? getTrees(connections, 4, treeAKAs, isAdmin) : { allTrees: [], saplings: [], predecessorTrees: [] }),
     [connections, treeAKAs, isAdmin]
   );
   
