@@ -9,39 +9,6 @@ export function getTrees(connections: Connection[], saplingThreshold: number = 4
   }
 
   const allTreeNames = Array.from(new Set(connections.map(c => c.tree || '(None)')));
-
-  const mainTrees = new Set<string>();
-  const saplings = new Set<string>();
-  const predecessors = new Set<string>();
-  const processedGroups = new Set<string>(); // Tracks canonical names of processed groups
-
-  for (const treeName of allTreeNames) {
-    if (treeName === '(None)' || processedGroups.has(treeAKAs[treeName] || treeName)) {
-      continue;
-    }
-    
-    const familyGroup = getFamilyGroup(connections, treeName, treeAKAs);
-    const canonicalName = familyGroup.mainTree;
-
-    // Mark this entire group as processed
-    processedGroups.add(canonicalName);
-    
-    // Add all sub-trees (and any old names) to predecessors
-    const allGroupTrees = [familyGroup.mainTree, ...familyGroup.subTrees];
-    allGroupTrees.forEach(t => {
-      if (t !== canonicalName) {
-        predecessors.add(t);
-      }
-    });
-
-    if (familyGroup.totalMembers <= saplingThreshold && familyGroup.subTrees.length === 0) {
-      // It's a sapling if it's small AND standalone
-      saplings.add(canonicalName);
-    } else {
-      // It's a main tree if it's large OR it has sub-trees
-      mainTrees.add(canonicalName);
-    }
-  }
   
   if (isAdmin) {
       return {
@@ -51,6 +18,45 @@ export function getTrees(connections: Connection[], saplingThreshold: number = 4
       }
   }
 
+  const familyGroups: { [canonicalName: string]: Set<string> } = {};
+
+  // First, group all trees by their canonical name
+  allTreeNames.forEach(treeName => {
+    if (treeName === '(None)') return;
+    const canonicalName = treeAKAs[treeName] || treeName;
+    if (!familyGroups[canonicalName]) {
+      familyGroups[canonicalName] = new Set();
+    }
+    familyGroups[canonicalName].add(treeName);
+  });
+
+  const mainTrees = new Set<string>();
+  const saplings = new Set<string>();
+  const predecessors = new Set<string>();
+
+  for (const canonicalName in familyGroups) {
+    const group = familyGroups[canonicalName];
+    const groupMembers = new Set<string>();
+    connections.forEach(c => {
+      if (group.has(c.tree)) {
+        groupMembers.add(c.bit);
+        groupMembers.add(c.byte);
+      }
+    });
+
+    // If a group only has one tree and it's small, it's a sapling.
+    if (group.size === 1 && groupMembers.size <= saplingThreshold) {
+      saplings.add(canonicalName);
+    } else {
+      // Otherwise, it's a main tree, and the other names are predecessors.
+      mainTrees.add(canonicalName);
+      group.forEach(treeName => {
+        if (treeName !== canonicalName) {
+          predecessors.add(treeName);
+        }
+      });
+    }
+  }
 
   return {
     allTrees: Array.from(mainTrees).sort(),
@@ -123,8 +129,14 @@ export function buildTree(
         allNodes[byte].children.push(allNodes[bit]);
       }
       
+      // If a byte in this tree is NOT a bit within the same set of relevant connections,
+      // it's a potential root of one of the sub-trees.
       if (!bitsInScope.has(byte)) {
-        allNodes[byte].rootOfTreeName = tree;
+        // Find which tree this person is the byte of within the relevant set.
+        const conn = relevantConnections.find(c => c.byte === byte);
+        if (conn) {
+           allNodes[byte].rootOfTreeName = conn.tree;
+        }
       }
   });
 
