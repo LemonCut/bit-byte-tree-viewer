@@ -4,67 +4,66 @@ import type { Connection, TreeNode, SearchResult, TreeAKA, Person } from '@/lib/
 // The data itself will be read from a local CSV file.
 
 export function getTrees(connections: Connection[], saplingThreshold: number = 4, treeAKAs: TreeAKA = {}, isAdmin: boolean = false): { allTrees: string[], saplings: string[], predecessorTrees: string[] } {
-  const treeNames = new Set<string>();
-  connections.forEach((c) => {
-    const treeName = c.tree || '(None)';
-    treeNames.add(treeName);
-  });
-  
-  const predecessorTrees: string[] = [];
-  const canonicalTreeNames = new Set(Object.values(treeAKAs));
-
-  if (!isAdmin) {
-    // This logic ensures we only show the *final* canonical tree name.
-    const oldTreeNames = Object.keys(treeAKAs);
-    oldTreeNames.forEach(oldName => {
-      // If a tree name is a predecessor to another, it shouldn't be in the main list.
-      if (treeNames.has(oldName)) {
-        treeNames.delete(oldName);
-        predecessorTrees.push(oldName);
-      }
-    });
+  if (connections.length === 0) {
+    return { allTrees: [], saplings: [], predecessorTrees: [] };
   }
 
-  const allTreesList = Array.from(treeNames);
-  const mainTrees: string[] = [];
-  const saplings: string[] = [];
+  const allTreeNames = Array.from(new Set(connections.map(c => c.tree || '(None)')));
 
-  allTreesList.forEach(treeName => {
-    if (treeName === '(None)') return;
+  const mainTrees = new Set<string>();
+  const saplings = new Set<string>();
+  const predecessors = new Set<string>();
+  const processedGroups = new Set<string>(); // Tracks canonical names of processed groups
 
-    // Use the getFamilyGroup logic to determine the size of the entire connected group
-    const familyGroup = getFamilyGroup(connections, treeName, treeAKAs);
-    
-    // We only want to process each family group once. We do this by checking if the
-    // current treeName is the main (canonical) tree of its group.
-    if (treeName !== familyGroup.mainTree) {
-      // If we are processing a sub-tree, we skip it to avoid duplication,
-      // unless it's an admin viewing all raw trees.
-       if (!isAdmin) {
-         if (!predecessorTrees.includes(treeName)) {
-            predecessorTrees.push(treeName);
-         }
-         return;
-       }
+  for (const treeName of allTreeNames) {
+    if (treeName === '(None)' || processedGroups.has(treeAKAs[treeName] || treeName)) {
+      continue;
     }
+    
+    const familyGroup = getFamilyGroup(connections, treeName, treeAKAs);
+    const canonicalName = familyGroup.mainTree;
 
+    // Mark this entire group as processed
+    processedGroups.add(canonicalName);
+    
+    // Add all sub-trees (and the main tree if it's an AKA) to predecessors
+    const allGroupTrees = [familyGroup.mainTree, ...familyGroup.subTrees];
+    allGroupTrees.forEach(t => {
+      if (t !== canonicalName) {
+        predecessors.add(t);
+      }
+    });
 
     if (familyGroup.totalMembers <= saplingThreshold) {
-      saplings.push(familyGroup.mainTree);
+      // It's a sapling if it's a small standalone tree or a small group
+      saplings.add(canonicalName);
     } else {
-      mainTrees.push(familyGroup.mainTree);
+      // It's a main tree if it's large
+      mainTrees.add(canonicalName);
     }
-  });
 
-  // Deduplicate and sort
-  const uniqueMain = Array.from(new Set(mainTrees)).sort();
-  const uniqueSaplings = Array.from(new Set(saplings)).sort();
-  const uniquePredecessors = Array.from(new Set(predecessorTrees)).sort();
+    if (isAdmin) {
+      // In admin mode, show all trees individually
+      predecessors.forEach(p => mainTrees.add(p));
+      saplings.forEach(s => mainTrees.add(s));
+      predecessors.clear();
+      saplings.clear();
+    }
+  }
   
+  if (isAdmin) {
+      return {
+          allTrees: Array.from(new Set(allTreeNames.filter(t => t !== '(None)'))).sort(),
+          saplings: [],
+          predecessorTrees: []
+      }
+  }
+
+
   return {
-    allTrees: uniqueMain,
-    saplings: uniqueSaplings,
-    predecessorTrees: uniquePredecessors,
+    allTrees: Array.from(mainTrees).sort(),
+    saplings: Array.from(saplings).sort(),
+    predecessorTrees: Array.from(predecessors).sort(),
   };
 }
 
@@ -451,8 +450,12 @@ export function getFamilyGroup(
   // Sort by size to find the main tree.
   treeSizes.sort((a, b) => b.size - a.size);
   
-  const mainTree = treeSizes.length > 0 ? treeSizes[0].name : canonicalStartTree;
-  const subTrees = treeSizes.slice(1).map(t => t.name).sort();
+  // The largest tree in the group is always the mainTree.
+  // The canonical name from the AKA mapping should be the ultimate source of truth
+  // for the group's identity.
+  const mainTree = canonicalStartTree;
+  
+  const subTrees = Array.from(groupTrees).filter(t => t !== mainTree).sort();
 
   return { mainTree, subTrees, totalMembers };
 }
