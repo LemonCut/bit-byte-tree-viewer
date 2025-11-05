@@ -1,4 +1,3 @@
-
 import type { Connection, TreeNode, SearchResult, TreeAKA, Person } from '@/lib/types';
 
 // This file is now primarily for the data transformation logic.
@@ -12,13 +11,14 @@ export function getTrees(connections: Connection[], saplingThreshold: number = 4
   });
   
   const predecessorTrees: string[] = [];
+  const canonicalTreeNames = new Set(Object.values(treeAKAs));
 
   if (!isAdmin) {
     // This logic ensures we only show the *final* canonical tree name.
     const oldTreeNames = Object.keys(treeAKAs);
-    const canonicalTreeNames = new Set(Object.values(treeAKAs));
     oldTreeNames.forEach(oldName => {
-      if (!canonicalTreeNames.has(oldName)) {
+      // If a tree name is a predecessor to another, it shouldn't be in the main list.
+      if (treeNames.has(oldName)) {
         treeNames.delete(oldName);
         predecessorTrees.push(oldName);
       }
@@ -32,29 +32,39 @@ export function getTrees(connections: Connection[], saplingThreshold: number = 4
   allTreesList.forEach(treeName => {
     if (treeName === '(None)') return;
 
-    const peopleInTree = new Set<string>();
-    connections.forEach(c => {
-      if (c.tree === treeName) {
-        peopleInTree.add(c.bit);
-        peopleInTree.add(c.byte);
-      }
-    });
+    // Use the getFamilyGroup logic to determine the size of the entire connected group
+    const familyGroup = getFamilyGroup(connections, treeName, treeAKAs);
+    
+    // We only want to process each family group once. We do this by checking if the
+    // current treeName is the main (canonical) tree of its group.
+    if (treeName !== familyGroup.mainTree) {
+      // If we are processing a sub-tree, we skip it to avoid duplication,
+      // unless it's an admin viewing all raw trees.
+       if (!isAdmin) {
+         if (!predecessorTrees.includes(treeName)) {
+            predecessorTrees.push(treeName);
+         }
+         return;
+       }
+    }
 
-    if (peopleInTree.size <= saplingThreshold) {
-      saplings.push(treeName);
+
+    if (familyGroup.totalMembers <= saplingThreshold) {
+      saplings.push(familyGroup.mainTree);
     } else {
-      mainTrees.push(treeName);
+      mainTrees.push(familyGroup.mainTree);
     }
   });
 
-  mainTrees.sort();
-  saplings.sort();
-  predecessorTrees.sort();
+  // Deduplicate and sort
+  const uniqueMain = Array.from(new Set(mainTrees)).sort();
+  const uniqueSaplings = Array.from(new Set(saplings)).sort();
+  const uniquePredecessors = Array.from(new Set(predecessorTrees)).sort();
   
   return {
-    allTrees: mainTrees,
-    saplings: saplings,
-    predecessorTrees: predecessorTrees,
+    allTrees: uniqueMain,
+    saplings: uniqueSaplings,
+    predecessorTrees: uniquePredecessors,
   };
 }
 
@@ -92,33 +102,22 @@ export function findBitInOtherTrees(connections: Connection[], bit: string, curr
 
 export function buildTree(
   connections: Connection[],
-  treeName: string
+  treeNames: string | string[]
 ): TreeNode[] {
-  // Do not perform merge logic for the '(None)' tree
-  if (treeName === '(None)') {
+  const names = Array.isArray(treeNames) ? treeNames : [treeNames];
+  
+  if (names.includes('(None)')) {
      const treeConnections = connections.filter(c => (c.tree || '(None)') === '(None)');
      return buildSingleTree(treeConnections, '(None)');
   }
   
-  const treeAKAs = findTreeAKAs(connections);
-  // Find all tree names that are equivalent to the selected treeName
-  const equivalentTreeNames = new Set([treeName]);
-  for (const aka in treeAKAs) {
-    if (treeAKAs[aka] === treeName) {
-      equivalentTreeNames.add(aka);
-    }
-  }
+  const relevantConnections = connections.filter(c => names.includes(c.tree || '(None)'));
 
   const allNodes: { [key: string]: TreeNode } = {};
 
-  // Helper function to process connections for a single tree
-  const processTreeConnections = (
-    treeConnections: Connection[],
-    currentTreeName: string
-  ) => {
-    const bitsInTree = new Set(treeConnections.map(c => c.bit));
+  const bitsInScope = new Set(relevantConnections.map(c => c.bit));
 
-    treeConnections.forEach(({ byte, bit, year }) => {
+  relevantConnections.forEach(({ byte, bit, year, tree }) => {
       
       if (!allNodes[byte]) {
         allNodes[byte] = { id: byte, name: byte, children: [] };
@@ -129,37 +128,20 @@ export function buildTree(
         allNodes[bit].year = year;
       }
       
-      // Link child to parent
       if (!allNodes[byte].children.some(child => child.id === bit)) {
         allNodes[byte].children.push(allNodes[bit]);
       }
       
-      // Identify and tag root of the *current* tree
-      if (!bitsInTree.has(byte)) {
-        allNodes[byte].rootOfTreeName = currentTreeName;
+      if (!bitsInScope.has(byte)) {
+        allNodes[byte].rootOfTreeName = tree;
       }
-    });
-  };
-
-  // Process connections for each equivalent tree name
-  equivalentTreeNames.forEach(name => {
-    const relevantConnections = connections.filter(c => (c.tree || '(None)') === name);
-    processTreeConnections(relevantConnections, name);
   });
 
 
   if (Object.keys(allNodes).length === 0) return [];
-
-  // Determine the final root nodes for the entire merged structure
-  const allBitNamesInMergedTree = new Set<string>();
   
-  connections
-    .filter(c => equivalentTreeNames.has(c.tree || '(None)'))
-    .forEach(c => allBitNamesInMergedTree.add(c.bit));
-
-
   const finalRootNodes = Object.values(allNodes).filter(
-    (node) => !allBitNamesInMergedTree.has(node.name)
+    (node) => !bitsInScope.has(node.name)
   );
 
   return finalRootNodes;
@@ -424,4 +406,53 @@ export function findDisconnectedTrees(connections: Connection[]): string[] {
 
 
   return Array.from(disconnectedTreeNames).filter(name => name !== '(None)').sort();
+}
+
+/**
+ * Finds all trees connected to a given tree, determines the main tree based on member count,
+ * and lists the others as sub-trees.
+ */
+export function getFamilyGroup(
+  connections: Connection[],
+  startTree: string,
+  treeAKAs: TreeAKA
+): { mainTree: string; subTrees: string[]; totalMembers: number } {
+  // First, resolve the canonical name for the starting tree.
+  const canonicalStartTree = treeAKAs[startTree] || startTree;
+
+  // Find all trees that are part of the same canonical group.
+  const groupTrees = new Set([canonicalStartTree]);
+  for (const aka in treeAKAs) {
+    if (treeAKAs[aka] === canonicalStartTree) {
+      groupTrees.add(aka);
+    }
+  }
+
+  // Calculate the size of each tree in the group.
+  const treeSizes: { name: string; size: number }[] = [];
+  let totalMembers = 0;
+  const allMembers = new Set<string>();
+
+  groupTrees.forEach(treeName => {
+    const members = new Set<string>();
+    connections.forEach(c => {
+      if (c.tree === treeName) {
+        members.add(c.bit);
+        members.add(c.byte);
+        allMembers.add(c.bit);
+        allMembers.add(c.byte);
+      }
+    });
+    treeSizes.push({ name: treeName, size: members.size });
+  });
+  
+  totalMembers = allMembers.size;
+
+  // Sort by size to find the main tree.
+  treeSizes.sort((a, b) => b.size - a.size);
+  
+  const mainTree = treeSizes.length > 0 ? treeSizes[0].name : canonicalStartTree;
+  const subTrees = treeSizes.slice(1).map(t => t.name).sort();
+
+  return { mainTree, subTrees, totalMembers };
 }

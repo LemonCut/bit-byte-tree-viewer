@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useMemo, useState, useEffect, Suspense } from 'react';
@@ -13,7 +12,7 @@ import {
   SidebarGroupLabel,
 } from '@/components/ui/sidebar';
 import { TreeViewLogo } from '@/components/icons';
-import { getTrees, getAllPeople, findTreeAKAs, findDisconnectedTrees, buildTree } from '@/lib/data';
+import { getTrees, getAllPeople, findTreeAKAs, findDisconnectedTrees, buildTree, getFamilyGroup } from '@/lib/data';
 import { TreeSelector } from '@/components/tree-selector';
 import { OrgChart } from '@/components/org-chart';
 import { Separator } from '@/components/ui/separator';
@@ -22,6 +21,7 @@ import {
   CardHeader,
   CardTitle,
   CardDescription,
+  CardContent
 } from '@/components/ui/card';
 import type { TreeNode, Connection } from '@/lib/types';
 import { SearchDialog } from '@/components/search-dialog';
@@ -58,17 +58,20 @@ function TreeViewerPageContent({ connections }: TreeViewerPageProps) {
     () => (connections ? findTreeAKAs(connections) : {}),
     [connections]
   );
+  
+  const familyGroup = useMemo(
+    () => (connections && treeParam ? getFamilyGroup(connections, treeParam, treeAKAs) : null),
+    [connections, treeParam, treeAKAs]
+  );
 
   useEffect(() => {
-    if (!isAdmin && treeParam && treeParam !== '(None)' && treeAKAs[treeParam]) {
-      const newTreeName = treeAKAs[treeParam];
-      if (treeParam !== newTreeName) {
-          const params = new URLSearchParams(searchParams.toString());
-          params.set('tree', newTreeName);
-          router.replace(`${pathname}?${params.toString()}`);
-      }
+    if (!isAdmin && treeParam && treeParam !== '(None)' && familyGroup?.mainTree && treeParam !== familyGroup.mainTree) {
+      const newTreeName = familyGroup.mainTree;
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('tree', newTreeName);
+      router.replace(`${pathname}?${params.toString()}`);
     }
-  }, [isAdmin, treeParam, treeAKAs, router, pathname, searchParams]);
+  }, [isAdmin, treeParam, familyGroup, router, pathname, searchParams]);
 
 
   const { allTrees } = useMemo(
@@ -76,7 +79,8 @@ function TreeViewerPageContent({ connections }: TreeViewerPageProps) {
     [connections, treeAKAs, isAdmin]
   );
   
-  const currentTreeName = treeParam || '';
+  const currentTreeName = familyGroup?.mainTree || treeParam || '';
+  const subTrees = familyGroup?.subTrees || [];
 
   const allPeople = useMemo(
     () => (connections ? getAllPeople(connections) : []),
@@ -88,19 +92,23 @@ function TreeViewerPageContent({ connections }: TreeViewerPageProps) {
     [connections]
   );
   
-  const treeData = useMemo(
-    () =>
-      connections && treeParam ? buildTree(connections, treeParam) : [],
-    [connections, treeParam]
-  );
+  const treeData = useMemo(() => {
+    if (!connections || !treeParam) return [];
+    
+    // If we have a family group, we build the tree for all trees in the group.
+    // Otherwise, just build for the single selected tree.
+    const treesToBuild = familyGroup ? [familyGroup.mainTree, ...familyGroup.subTrees] : [treeParam];
+    return buildTree(connections, treesToBuild);
+  }, [connections, treeParam, familyGroup]);
+
 
   useEffect(() => {
     setShuffledTreeData(treeData);
   }, [treeData]);
   
   let pageTitle = 'Welcome';
-  if (treeParam) {
-    pageTitle = `${treeParam} Tree`;
+  if (currentTreeName) {
+    pageTitle = `${currentTreeName} Tree`;
   }
 
   const handleAdminToggle = () => {
@@ -156,6 +164,9 @@ function TreeViewerPageContent({ connections }: TreeViewerPageProps) {
               <SidebarTrigger className="md:hidden" />
                <div>
                   <h2 className="text-2xl font-bold tracking-tight">{pageTitle}</h2>
+                  {subTrees.length > 0 && (
+                      <p className="text-sm text-muted-foreground">Also... {subTrees.join(', ')}</p>
+                  )}
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -173,7 +184,7 @@ function TreeViewerPageContent({ connections }: TreeViewerPageProps) {
             </div>
             <div className="p-4 md:p-6 lg:p-8 h-full">
               <div className="mb-4 h-[40px]">
-                  <h2 className="text-2xl font-bold tracking-tight">{pageTitle}</h2>
+                  {/* Content moved to header to accommodate subtitle */}
               </div>
               <OrgChartWrapper 
                 loading={loading} 
@@ -213,6 +224,9 @@ function TreeViewerPageContent({ connections }: TreeViewerPageProps) {
           <div className="p-4 md:p-6 lg:p-8 h-full">
              <div className="mb-4 h-[40px]">
                 <h2 className="text-2xl font-bold tracking-tight">{pageTitle}</h2>
+                 {subTrees.length > 0 && (
+                    <p className="text-sm text-muted-foreground">Also... {subTrees.join(', ')}</p>
+                )}
             </div>
             <OrgChartWrapper 
                 loading={loading} 
@@ -244,6 +258,11 @@ const OrgChartWrapper = ({ loading, connections, treeData, currentTreeName, tree
                         To get started, select a tree from the dropdown menu at the top right, or use the search icon to find a specific person.
                     </CardDescription>
                 </CardHeader>
+                <CardContent>
+                  <Button asChild>
+                    <Link href="/all">View All Trees</Link>
+                  </Button>
+                </CardContent>
             </Card>
        </div>
     )
@@ -301,7 +320,7 @@ const OrgChartWrapper = ({ loading, connections, treeData, currentTreeName, tree
 
 export function TreeViewerPage({ connections }: TreeViewerPageProps) {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<PageLoader />}>
       <TreeViewerPageContent connections={connections} />
     </Suspense>
   )
