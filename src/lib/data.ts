@@ -103,48 +103,55 @@ export function buildTree(
 ): TreeNode[] {
   const names = Array.isArray(treeNames) ? treeNames : [treeNames];
   
-  if (names.includes('(None)')) {
-     const treeConnections = connections.filter(c => (c.tree || '(None)') === '(None)');
-     return buildSingleTree(treeConnections, '(None)');
-  }
-  
   const relevantConnections = connections.filter(c => names.includes(c.tree || '(None)'));
 
-  const allNodes: { [key: string]: TreeNode } = {};
-
-  const bitsInScope = new Set(relevantConnections.map(c => c.bit));
-
-  relevantConnections.forEach(({ byte, bit, year, tree }) => {
-      
-      if (!allNodes[byte]) {
-        allNodes[byte] = { id: byte, name: byte, children: [] };
-      }
-      if (!allNodes[bit]) {
-        allNodes[bit] = { id: bit, name: bit, year, children: [] };
-      } else if (allNodes[bit].year === undefined) {
-        allNodes[bit].year = year;
-      }
-      
-      if (!allNodes[byte].children.some(child => child.id === bit)) {
-        allNodes[byte].children.push(allNodes[bit]);
-      }
-      
-      // If a byte in this tree is NOT a bit within the same set of relevant connections,
-      // it's a potential root of one of the sub-trees.
-      if (!bitsInScope.has(byte)) {
-        // Find which tree this person is the byte of within the relevant set.
-        const conn = relevantConnections.find(c => c.byte === byte);
-        if (conn) {
-           allNodes[byte].rootOfTreeName = conn.tree;
-        }
-      }
-  });
-
-
-  if (Object.keys(allNodes).length === 0) return [];
+  if (names.includes('(None)')) {
+     return buildSingleTree(relevantConnections, '(None)');
+  }
   
+  const allNodes: { [key: string]: TreeNode } = {};
+  const allPeopleInGroup = new Set(relevantConnections.flatMap(c => [c.bit, c.byte]));
+
+  // Pre-calculate which people are bits within each specific tree of the group
+  const bitsByTree: { [tree: string]: Set<string> } = {};
+  for (const treeName of names) {
+    bitsByTree[treeName] = new Set(
+      connections.filter(c => c.tree === treeName).map(c => c.bit)
+    );
+  }
+
+  // Create all nodes first
+  for (const personName of allPeopleInGroup) {
+    allNodes[personName] = { id: personName, name: personName, children: [] };
+  }
+
+  // Populate children and other details
+  for (const { byte, bit, year, tree } of relevantConnections) {
+    const byteNode = allNodes[byte];
+    const bitNode = allNodes[bit];
+
+    if (bitNode && bitNode.year === undefined) {
+      bitNode.year = year;
+    }
+    
+    // Add child to parent if not already present
+    if (byteNode && bitNode && !byteNode.children.some(child => child.id === bit)) {
+      byteNode.children.push(bitNode);
+    }
+
+    // Check if this 'byte' is a root of its specific tree
+    const bitsInThisTree = bitsByTree[tree];
+    if (bitsInThisTree && !bitsInThisTree.has(byte)) {
+       if (byteNode) {
+         byteNode.rootOfTreeName = tree;
+       }
+    }
+  }
+
+  // Find the final root nodes for the entire merged tree
+  const allBitsInGroup = new Set(relevantConnections.map(c => c.bit));
   const finalRootNodes = Object.values(allNodes).filter(
-    (node) => !bitsInScope.has(node.name)
+    (node) => !allBitsInGroup.has(node.name)
   );
 
   return finalRootNodes;
