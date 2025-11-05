@@ -26,7 +26,7 @@ export function getTrees(connections: Connection[], saplingThreshold: number = 4
     // Mark this entire group as processed
     processedGroups.add(canonicalName);
     
-    // Add all sub-trees (and the main tree if it's an AKA) to predecessors
+    // Add all sub-trees (and any old names) to predecessors
     const allGroupTrees = [familyGroup.mainTree, ...familyGroup.subTrees];
     allGroupTrees.forEach(t => {
       if (t !== canonicalName) {
@@ -34,20 +34,12 @@ export function getTrees(connections: Connection[], saplingThreshold: number = 4
       }
     });
 
-    if (familyGroup.totalMembers <= saplingThreshold) {
-      // It's a sapling if it's a small standalone tree or a small group
+    if (familyGroup.totalMembers <= saplingThreshold && familyGroup.subTrees.length === 0) {
+      // It's a sapling if it's small AND standalone
       saplings.add(canonicalName);
     } else {
-      // It's a main tree if it's large
+      // It's a main tree if it's large OR it has sub-trees
       mainTrees.add(canonicalName);
-    }
-
-    if (isAdmin) {
-      // In admin mode, show all trees individually
-      predecessors.forEach(p => mainTrees.add(p));
-      saplings.forEach(s => mainTrees.add(s));
-      predecessors.clear();
-      saplings.clear();
     }
   }
   
@@ -429,7 +421,6 @@ export function getFamilyGroup(
 
   // Calculate the size of each tree in the group.
   const treeSizes: { name: string; size: number }[] = [];
-  let totalMembers = 0;
   const allMembers = new Set<string>();
 
   groupTrees.forEach(treeName => {
@@ -445,15 +436,13 @@ export function getFamilyGroup(
     treeSizes.push({ name: treeName, size: members.size });
   });
   
-  totalMembers = allMembers.size;
+  const totalMembers = allMembers.size;
 
   // Sort by size to find the main tree.
   treeSizes.sort((a, b) => b.size - a.size);
   
-  // The largest tree in the group is always the mainTree.
-  // The canonical name from the AKA mapping should be the ultimate source of truth
-  // for the group's identity.
-  const mainTree = canonicalStartTree;
+  // The largest tree in the group is the mainTree.
+  const mainTree = treeSizes.length > 0 ? treeSizes[0].name : canonicalStartTree;
   
   const subTrees = Array.from(groupTrees).filter(t => t !== mainTree).sort();
 
