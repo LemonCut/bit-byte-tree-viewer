@@ -45,7 +45,7 @@ async function getConnectionsData() {
 async function AllTreesPageContent() {
   const connections = await getConnectionsData();
   const treeAKAs = findTreeAKAs(connections as Connection[]);
-  const { allTrees, saplings, predecessorTrees } = getTrees(connections as Connection[], 4, treeAKAs, false);
+  const { allTrees, saplings, branchedTrees } = getTrees(connections as Connection[], 4, treeAKAs, false);
 
 
   return (
@@ -103,7 +103,7 @@ async function AllTreesPageContent() {
             </CardHeader>
             <CardContent>
               {saplings.length > 0 ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                <div className="grid grid-cols-2 sm-grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                   {saplings.map((sapling) => (
                     <Button key={sapling} variant="secondary" asChild>
                       <Link href={`/?tree=${encodeURIComponent(sapling)}`}>
@@ -124,15 +124,15 @@ async function AllTreesPageContent() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Predecessor Trees</CardTitle>
+              <CardTitle>Branched Trees</CardTitle>
               <CardDescription>
-                These trees have branched off and will redirect to their new trees.
+                These trees have been absorbed into a larger tree and will redirect.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {predecessorTrees.length > 0 ? (
+              {branchedTrees.length > 0 ? (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                  {predecessorTrees.map((tree) => (
+                  {branchedTrees.map((tree) => (
                     <Button key={tree} variant="secondary" asChild>
                       <Link href={`/?tree=${encodeURIComponent(tree)}`}>
                         {tree}
@@ -142,7 +142,7 @@ async function AllTreesPageContent() {
                 </div>
               ) : (
                 <p className="text-muted-foreground text-sm">
-                  No predecessor trees found.
+                  No branched trees found.
                 </p>
               )}
             </CardContent>

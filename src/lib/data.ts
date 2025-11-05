@@ -3,18 +3,18 @@ import type { Connection, TreeNode, SearchResult, TreeAKA, Person } from '@/lib/
 // This file is now primarily for the data transformation logic.
 // The data itself will be read from a local CSV file.
 
-export function getTrees(connections: Connection[], saplingThreshold: number = 4, treeAKAs: TreeAKA = {}, isAdmin: boolean = false): { allTrees: string[], saplings: string[], predecessorTrees: string[] } {
+export function getTrees(connections: Connection[], saplingThreshold: number = 4, treeAKAs: TreeAKA = {}, isAdmin: boolean = false): { allTrees: string[], saplings: string[], branchedTrees: string[] } {
   if (connections.length === 0) {
-    return { allTrees: [], saplings: [], predecessorTrees: [] };
+    return { allTrees: [], saplings: [], branchedTrees: [] };
   }
 
-  const allTreeNames = Array.from(new Set(connections.map(c => c.tree || '(None)')));
+  const allTreeNames = Array.from(new Set(connections.map(c => c.tree || '(None)'))).filter(t => t !== '(None)');
   
   if (isAdmin) {
       return {
-          allTrees: Array.from(new Set(allTreeNames.filter(t => t !== '(None)'))).sort(),
+          allTrees: allTreeNames.sort(),
           saplings: [],
-          predecessorTrees: []
+          branchedTrees: []
       }
   }
 
@@ -22,7 +22,6 @@ export function getTrees(connections: Connection[], saplingThreshold: number = 4
 
   // First, group all trees by their canonical name
   allTreeNames.forEach(treeName => {
-    if (treeName === '(None)') return;
     const canonicalName = treeAKAs[treeName] || treeName;
     if (!familyGroups[canonicalName]) {
       familyGroups[canonicalName] = new Set();
@@ -32,36 +31,44 @@ export function getTrees(connections: Connection[], saplingThreshold: number = 4
 
   const mainTrees = new Set<string>();
   const saplings = new Set<string>();
-  const predecessors = new Set<string>();
+  const branchedTrees = new Set<string>();
 
   for (const canonicalName in familyGroups) {
     const group = familyGroups[canonicalName];
     const groupMembers = new Set<string>();
-    connections.forEach(c => {
-      if (group.has(c.tree)) {
-        groupMembers.add(c.bit);
-        groupMembers.add(c.byte);
-      }
-    });
-
-    // If a group only has one tree and it's small, it's a sapling.
-    if (group.size === 1 && groupMembers.size <= saplingThreshold) {
+    
+    // Get all members for the entire group
+    const { mainTree, subTrees, totalMembers } = getFamilyGroup(connections, canonicalName, treeAKAs);
+    
+    // If a group only has one tree and its small, it's a sapling.
+    if (group.size === 1 && totalMembers <= saplingThreshold) {
       saplings.add(canonicalName);
     } else {
-      // Otherwise, it's a main tree, and the other names are predecessors.
-      mainTrees.add(canonicalName);
+      // Otherwise, it's a main tree, and the other names are branched.
+      mainTrees.add(mainTree);
+      subTrees.forEach(subTree => {
+        branchedTrees.add(subTree);
+      });
+      // Also add any other trees in the group that weren't caught by getFamilyGroup logic
       group.forEach(treeName => {
-        if (treeName !== canonicalName) {
-          predecessors.add(treeName);
+        if (treeName !== mainTree) {
+          branchedTrees.add(treeName);
         }
       });
     }
   }
+  
+  // Ensure a main tree isn't also listed as branched
+  branchedTrees.forEach(bt => {
+    if (mainTrees.has(bt)) {
+      mainTrees.delete(bt);
+    }
+  })
 
   return {
     allTrees: Array.from(mainTrees).sort(),
     saplings: Array.from(saplings).sort(),
-    predecessorTrees: Array.from(predecessors).sort(),
+    branchedTrees: Array.from(branchedTrees).sort(),
   };
 }
 
@@ -112,14 +119,6 @@ export function buildTree(
   const allNodes: { [key: string]: TreeNode } = {};
   const allPeopleInGroup = new Set(relevantConnections.flatMap(c => [c.bit, c.byte]));
 
-  // Pre-calculate which people are bits within each specific tree of the group
-  const bitsByTree: { [tree: string]: Set<string> } = {};
-  for (const treeName of names) {
-    bitsByTree[treeName] = new Set(
-      connections.filter(c => c.tree === treeName).map(c => c.bit)
-    );
-  }
-
   // Create all nodes first
   for (const personName of allPeopleInGroup) {
     allNodes[personName] = { id: personName, name: personName, children: [] };
@@ -138,15 +137,22 @@ export function buildTree(
     if (byteNode && bitNode && !byteNode.children.some(child => child.id === bit)) {
       byteNode.children.push(bitNode);
     }
-
-    // Check if this 'byte' is a root of its specific tree
-    const bitsInThisTree = bitsByTree[tree];
-    if (bitsInThisTree && !bitsInThisTree.has(byte)) {
-       if (byteNode) {
-         byteNode.rootOfTreeName = tree;
-       }
-    }
   }
+
+  // Identify roots of specific trees within the group
+  for (const node of Object.values(allNodes)) {
+      // Find what tree this node is a root of, if any
+      const rootOfConnections = connections.filter(c => c.byte === node.name);
+      for (const conn of rootOfConnections) {
+          const treeName = conn.tree;
+          const bitsInThatTree = new Set(connections.filter(c => c.tree === treeName).map(c => c.bit));
+          if (!bitsInThatTree.has(node.name)) {
+              node.rootOfTreeName = treeName;
+              break; // Found one, no need to check others
+          }
+      }
+  }
+
 
   // Find the final root nodes for the entire merged tree
   const allBitsInGroup = new Set(relevantConnections.map(c => c.bit));
