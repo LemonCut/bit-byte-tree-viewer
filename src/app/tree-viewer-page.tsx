@@ -28,7 +28,7 @@ import { SearchDialog } from '@/components/search-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AdminUnlock } from '@/components/admin-unlock';
 import { Button } from '@/components/ui/button';
-import { LogOut, Share2 } from 'lucide-react';
+import { LogOut, Share2, Download } from 'lucide-react';
 import { ShuffleLayoutButton } from '@/components/shuffle-layout-button';
 import React from 'react';
 import { HelpDialog } from '@/components/help-dialog';
@@ -155,6 +155,15 @@ function TreeViewerPageContent({ connections }: TreeViewerPageProps) {
               <Separator />
               <SidebarGroup>
                   <DisconnectedTrees treeNames={disconnectedTrees} />
+              </SidebarGroup>
+              <Separator />
+              <SidebarGroup>
+                <Button asChild className="w-full" variant="outline">
+                    <Link href="/csv" download="connections.csv">
+                        <Download className="mr-2 h-4 w-4" />
+                        Download CSV
+                    </Link>
+                </Button>
               </SidebarGroup>
             </div>
           </SidebarContent>
