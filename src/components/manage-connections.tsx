@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -22,13 +21,14 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Button } from './ui/button';
-import { Trash2, Pencil } from 'lucide-react';
+import { Trash2, Pencil, Download } from 'lucide-react';
 import { AddConnectionForm } from './add-connection-form';
 import { deleteConnection } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import { Combobox } from './ui/combobox';
 import { Badge } from './ui/badge';
 import { Separator } from './ui/separator';
+import Link from 'next/link';
 
 interface ManageConnectionsProps {
   connections: Connection[];
@@ -84,9 +84,17 @@ export function ManageConnections({ connections, people, trees }: ManageConnecti
   return (
     <Card className="bg-transparent border-none shadow-none">
       <CardHeader className="p-0 mb-4">
-        <CardTitle className="text-lg">Manage Connections</CardTitle>
+        <div className="flex justify-between items-center">
+          <CardTitle className="text-lg">Manage Connections</CardTitle>
+          <Button asChild variant="outline" size="sm">
+            <Link href="/csv" download="connections.csv">
+              <Download className="mr-2 h-4 w-4" />
+              Download CSV
+            </Link>
+          </Button>
+        </div>
         <CardDescription>
-          Search for a person to view and edit their connections.
+          Search for a person to view and edit their connections, or download the full dataset.
         </CardDescription>
       </CardHeader>
       <CardContent className="p-0">
