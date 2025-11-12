@@ -1,7 +1,5 @@
-# Settings to manage and configure a Firebase App Hosting backend.
-# https://firebase.google.com/docs/app-hosting/configure
+## Deprecated: Firebase App Hosting is not used
+# This app no longer relies on Firebase or any backend service.
+# You can delete this file safely. It is kept here only for reference.
 
-runConfig:
-  # Increase this value if you'd like to automatically spin up
-  # more instances in response to increased traffic.
-  maxInstances: 1
+# No runtime configuration is required.
