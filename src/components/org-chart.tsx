@@ -17,6 +17,7 @@ interface OrgChartProps {
 // Function to convert our tree data into the format Google Charts expects
 function formatDataForGoogleChart(
   treeData: TreeNode[],
+  isMobile: boolean = false,
 ): (string | { v: string; f: string } | null)[][] {
   const chartData: (string | { v: string; f: string } | null)[][] = [
     ['Name', 'Parent', 'Tooltip'],
@@ -31,6 +32,11 @@ function formatDataForGoogleChart(
     nodes.forEach((node) => {
       const nodeId = node.id;
       let nodeName = `<div style="font-weight: bold;">${node.name}</div>`;
+      
+      // On mobile, show the year directly on the node since tooltips don't work
+      if (isMobile && node.year) {
+        nodeName += `<div style="font-size:0.7em; color:grey;">${node.year}</div>`;
+      }
       
       if (node.rootOfTreeName) {
         nodeName += `<div style="font-size:0.8em; color:grey;">${node.rootOfTreeName}</div>`;
@@ -67,13 +73,23 @@ export function OrgChart({ data, currentTreeName }: OrgChartProps) {
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
   const [isChartVisible, setIsChartVisible] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const pinchDist = useRef(0);
 
+  // Detect if device is mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile('ontouchstart' in window || navigator.maxTouchPoints > 0);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     if (data && data.length > 0) {
       setIsChartVisible(false);
-      setChartData(formatDataForGoogleChart(data));
+      setChartData(formatDataForGoogleChart(data, isMobile));
       
       // The chart needs a moment to render before we can measure it.
       // requestAnimationFrame is a better choice than setTimeout(0)
@@ -87,7 +103,7 @@ export function OrgChart({ data, currentTreeName }: OrgChartProps) {
       setChartData([]);
       setIsChartVisible(false);
     }
-  }, [data, currentTreeName]);
+  }, [data, currentTreeName, isMobile]);
   
   const handleWheel = (e: WheelEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -280,7 +296,7 @@ export function OrgChart({ data, currentTreeName }: OrgChartProps) {
         ref={chartWrapperRef}
         className={cn(
           "w-min h-min absolute top-0 left-0",
-          isPanning ? "pointer-events-none" : "pointer-events-auto"
+          isMobile ? "pointer-events-none" : (isPanning ? "pointer-events-none" : "pointer-events-auto")
         )}
         style={{
             transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
