@@ -280,7 +280,7 @@ export function OrgChart({ data, currentTreeName }: OrgChartProps) {
         ref={chartWrapperRef}
         className={cn(
           "w-min h-min absolute top-0 left-0",
-          "pointer-events-none" // This is the key fix
+          isPanning ? "pointer-events-none" : "pointer-events-auto"
         )}
         style={{
             transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
