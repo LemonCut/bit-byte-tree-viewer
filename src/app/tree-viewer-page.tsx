@@ -28,7 +28,7 @@ import { SearchDialog } from '@/components/search-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AdminUnlock } from '@/components/admin-unlock';
 import { Button } from '@/components/ui/button';
-import { LogOut, Share2, Download } from 'lucide-react';
+import { LogOut, Share2, Download, Calendar } from 'lucide-react';
 import { ShuffleLayoutButton } from '@/components/shuffle-layout-button';
 import React from 'react';
 import { HelpDialog } from '@/components/help-dialog';
@@ -50,6 +50,7 @@ function TreeViewerPageContent({ connections }: TreeViewerPageProps) {
   
   const [isAdmin, setIsAdmin] = useState(false);
   const [shuffledTreeData, setShuffledTreeData] = useState<TreeNode[] | null>(null);
+  const [showYears, setShowYears] = useState(true);
   
   const loading = !connections;
   
@@ -180,6 +181,14 @@ function TreeViewerPageContent({ connections }: TreeViewerPageProps) {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowYears(!showYears)}
+                title={showYears ? "Hide years" : "Show years"}
+              >
+                <Calendar className="h-[1.2rem] w-[1.2rem]" />
+              </Button>
               <ThemeToggle />
               <SearchDialog connections={connections || []} />
             </div>
@@ -202,6 +211,7 @@ function TreeViewerPageContent({ connections }: TreeViewerPageProps) {
                 treeData={shuffledTreeData} 
                 currentTreeName={currentTreeName} 
                 treeParam={treeParam}
+                showYears={showYears}
               />
             </div>
           </main>
@@ -218,6 +228,14 @@ function TreeViewerPageContent({ connections }: TreeViewerPageProps) {
           <h1 className="text-xl font-bold">Bit-Byte Tree Viewer</h1>
         </Link>
         <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setShowYears(!showYears)}
+            title={showYears ? "Hide years" : "Show years"}
+          >
+            <Calendar className="h-[1.2rem] w-[1.2rem]" />
+          </Button>
           <ThemeToggle />
           <SearchDialog connections={connections || []} />
         </div>
@@ -244,6 +262,7 @@ function TreeViewerPageContent({ connections }: TreeViewerPageProps) {
                 treeData={shuffledTreeData} 
                 currentTreeName={currentTreeName} 
                 treeParam={treeParam}
+                showYears={showYears}
             />
           </div>
         </main>
@@ -254,7 +273,7 @@ function TreeViewerPageContent({ connections }: TreeViewerPageProps) {
   );
 }
 
-const OrgChartWrapper = ({ loading, connections, treeData, currentTreeName, treeParam }: { loading: boolean, connections: Connection[] | null, treeData: TreeNode[] | null, currentTreeName: string, treeParam: string | null }) => {
+const OrgChartWrapper = ({ loading, connections, treeData, currentTreeName, treeParam, showYears }: { loading: boolean, connections: Connection[] | null, treeData: TreeNode[] | null, currentTreeName: string, treeParam: string | null, showYears: boolean }) => {
   if (!treeParam && !loading) {
     return (
        <div className="flex items-center justify-center h-full">
@@ -309,7 +328,8 @@ const OrgChartWrapper = ({ loading, connections, treeData, currentTreeName, tree
       {treeData.length > 0 ? (
         <OrgChart 
             data={treeData} 
-            currentTreeName={currentTreeName} 
+            currentTreeName={currentTreeName}
+            showYears={showYears}
         />
       ) : (
          treeParam && (

@@ -12,12 +12,13 @@ import { cn } from '@/lib/utils';
 interface OrgChartProps {
   data: TreeNode[];
   currentTreeName: string;
+  showYears?: boolean;
 }
 
 // Function to convert our tree data into the format Google Charts expects
 function formatDataForGoogleChart(
   treeData: TreeNode[],
-  isMobile: boolean = false,
+  showYears: boolean = false,
 ): (string | { v: string; f: string } | null)[][] {
   const chartData: (string | { v: string; f: string } | null)[][] = [
     ['Name', 'Parent', 'Tooltip'],
@@ -33,8 +34,8 @@ function formatDataForGoogleChart(
       const nodeId = node.id;
       let nodeName = `<div style="font-weight: bold;">${node.name}</div>`;
       
-      // On mobile, show the year directly on the node since tooltips don't work
-      if (isMobile && node.year) {
+      // Show the year directly on the node when showYears is enabled
+      if (showYears && node.year) {
         nodeName += `<div style="font-size:0.7em; color:grey;">${node.year}</div>`;
       }
       
@@ -61,7 +62,7 @@ function formatDataForGoogleChart(
   return chartData;
 }
 
-export function OrgChart({ data, currentTreeName }: OrgChartProps) {
+export function OrgChart({ data, currentTreeName, showYears = true }: OrgChartProps) {
   const [chartData, setChartData] = useState<
     (string | { v: string; f: string } | null)[][]
   >([]);
@@ -89,7 +90,7 @@ export function OrgChart({ data, currentTreeName }: OrgChartProps) {
   useEffect(() => {
     if (data && data.length > 0) {
       setIsChartVisible(false);
-      setChartData(formatDataForGoogleChart(data, isMobile));
+      setChartData(formatDataForGoogleChart(data, showYears));
       
       // The chart needs a moment to render before we can measure it.
       // requestAnimationFrame is a better choice than setTimeout(0)
@@ -103,7 +104,7 @@ export function OrgChart({ data, currentTreeName }: OrgChartProps) {
       setChartData([]);
       setIsChartVisible(false);
     }
-  }, [data, currentTreeName, isMobile]);
+  }, [data, currentTreeName, showYears]);
   
   const handleWheel = (e: WheelEvent<HTMLDivElement>) => {
     e.preventDefault();
