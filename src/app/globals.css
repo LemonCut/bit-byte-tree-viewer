@@ -96,3 +96,12 @@ body {
 .google-chart-node-selected {
   @apply bg-primary text-primary-foreground;
 }
+
+/* Google OrgChart connectors are table borders; keep them visible when scaled down. */
+.google-visualization-orgchart-lineleft,
+.google-visualization-orgchart-lineright,
+.google-visualization-orgchart-linebottom,
+.google-visualization-orgchart-linenode {
+  border-color: hsl(var(--muted-foreground)) !important;
+  border-width: 2px !important;
+}

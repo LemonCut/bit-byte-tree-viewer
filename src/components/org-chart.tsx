@@ -15,6 +15,19 @@ interface OrgChartProps {
   showYears?: boolean;
 }
 
+const MIN_SCALE = 0.4;
+const MAX_SCALE = 5;
+
+function clampScale(value: number): number {
+  return Math.max(MIN_SCALE, Math.min(value, MAX_SCALE));
+}
+
+function snapToDevicePixel(value: number): number {
+  if (typeof window === 'undefined') return value;
+  const dpr = window.devicePixelRatio || 1;
+  return Math.round(value * dpr) / dpr;
+}
+
 // Function to convert our tree data into the format Google Charts expects
 function formatDataForGoogleChart(
   treeData: TreeNode[],
@@ -109,7 +122,7 @@ export function OrgChart({ data, currentTreeName, showYears = true }: OrgChartPr
   const handleWheel = (e: WheelEvent<HTMLDivElement>) => {
     e.preventDefault();
     const scaleAmount = -e.deltaY > 0 ? 1.05 : 1 / 1.05; // Reduced zoom speed
-    const newScale = Math.max(0.2, Math.min(transform.scale * scaleAmount, 5));
+    const newScale = clampScale(transform.scale * scaleAmount);
 
     if (!containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
@@ -172,7 +185,7 @@ export function OrgChart({ data, currentTreeName, showYears = true }: OrgChartPr
         const scaleAmount = newPinchDist / pinchDist.current;
         pinchDist.current = newPinchDist;
         
-        const newScale = Math.max(0.2, Math.min(transform.scale * scaleAmount, 5));
+        const newScale = clampScale(transform.scale * scaleAmount);
         
         if (!containerRef.current) return;
         const rect = containerRef.current.getBoundingClientRect();
@@ -197,7 +210,7 @@ export function OrgChart({ data, currentTreeName, showYears = true }: OrgChartPr
     if (!containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
     const scaleAmount = direction === 'in' ? 1.2 : 1 / 1.2;
-    const newScale = Math.max(0.2, Math.min(transform.scale * scaleAmount, 5));
+    const newScale = clampScale(transform.scale * scaleAmount);
 
     const centerX = rect.width / 2;
     const centerY = rect.height / 2;
@@ -279,6 +292,9 @@ export function OrgChart({ data, currentTreeName, showYears = true }: OrgChartPr
   if (!data || data.length === 0) {
     return null;
   }
+
+  const displayX = transform.scale < 0.75 ? snapToDevicePixel(transform.x) : transform.x;
+  const displayY = transform.scale < 0.75 ? snapToDevicePixel(transform.y) : transform.y;
   
   return (
     <div 
@@ -300,10 +316,12 @@ export function OrgChart({ data, currentTreeName, showYears = true }: OrgChartPr
           isMobile ? "pointer-events-none" : (isPanning ? "pointer-events-none" : "pointer-events-auto")
         )}
         style={{
-            transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
+          transform: `translate3d(${displayX}px, ${displayY}px, 0) scale(${transform.scale})`,
             transformOrigin: '0 0',
             cursor: isPanning ? 'grabbing' : 'grab',
             visibility: isChartVisible ? 'visible' : 'hidden',
+          willChange: 'transform',
+          backfaceVisibility: 'hidden',
         }}
       >
         <Chart
